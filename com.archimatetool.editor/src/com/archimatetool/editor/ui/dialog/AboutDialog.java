@@ -5,10 +5,10 @@
  */
 package com.archimatetool.editor.ui.dialog;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.TrayDialog;
@@ -33,8 +33,9 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.internal.about.InstallationDialog;
 
 import com.archimatetool.editor.Application;
-import com.archimatetool.editor.ArchimateEditorPlugin;
-import com.archimatetool.editor.ui.IArchimateImages;
+import com.archimatetool.editor.ArchiPlugin;
+import com.archimatetool.editor.actions.CheckForNewVersionAction;
+import com.archimatetool.editor.ui.IArchiImages;
 
 
 /**
@@ -53,8 +54,12 @@ public class AboutDialog extends TrayDialog {
     private Text licenseText;
 
     private Button installationDetailsButton;
+    private Button checkNewVersionButton;
     
     private final static int INSTALLATION_DETAILS_ID = IDialogConstants.CLIENT_ID + 1;
+    private final static int CHECK_UPDATE_ID = INSTALLATION_DETAILS_ID + 1;
+    
+    private CheckForNewVersionAction checkNewVersionAction;
 
     public AboutDialog(Shell shell) {
         super(shell);
@@ -76,6 +81,9 @@ public class AboutDialog extends TrayDialog {
     protected void buttonPressed(int buttonId) {
         if(buttonId == INSTALLATION_DETAILS_ID) {
             new InstallationDialog(getShell(), PlatformUI.getWorkbench().getActiveWorkbenchWindow()).open();
+        }
+        else if(buttonId == CHECK_UPDATE_ID) {
+            checkNewVersionAction.run();
         }
         else {
             super.buttonPressed(buttonId);
@@ -123,7 +131,7 @@ public class AboutDialog extends TrayDialog {
 
         final int imageHeight;
         
-        final Image image = IArchimateImages.ImageFactory.getImage("splash.bmp"); //$NON-NLS-1$
+        final Image image = IArchiImages.ImageFactory.getImage("splash.bmp"); //$NON-NLS-1$
         if(image != null) {
             ImageData id = image.getImageData();
             gd.widthHint = id.width;
@@ -138,22 +146,24 @@ public class AboutDialog extends TrayDialog {
         
         final String version = Messages.AboutDialog_2 + System.getProperty(Application.APPLICATION_VERSIONID);
         final String build = Messages.AboutDialog_3 + System.getProperty(Application.APPLICATION_BUILDID);
-        final String copyright = ArchimateEditorPlugin.INSTANCE.getResourceString("%aboutCopyright"); //$NON-NLS-1$
+        final String copyright = ArchiPlugin.INSTANCE.getResourceString("%aboutCopyright"); //$NON-NLS-1$
         
         imageControl.addPaintListener(new PaintListener() {
+            @Override
             public void paintControl(PaintEvent e) {
                 int fontHeight = e.gc.getFontMetrics().getHeight() + 2;
                 
                 e.gc.drawImage(image, 0, 0);
                 e.gc.drawString(version, 19, 166, true);
                 e.gc.drawString(build, 19, 166 + fontHeight, true);
-                e.gc.drawString(copyright, 19, imageHeight - fontHeight - 5, true);
+                e.gc.drawString(copyright, 12, imageHeight - fontHeight - 5, true);
             }
         });
     }
     
     private void populateAboutTab() {
         installationDetailsButton.setVisible(true);
+        checkNewVersionButton.setVisible(true);
     }
     
     private void createLicenseTab() {
@@ -175,30 +185,18 @@ public class AboutDialog extends TrayDialog {
 
     private void populateLicenseTab() {
         installationDetailsButton.setVisible(false);
+        checkNewVersionButton.setVisible(false);
         
         if(licenseText.getText().length() == 0) {
-            File file = new File(ArchimateEditorPlugin.INSTANCE.getPluginFolder(), "LICENSE.txt"); //$NON-NLS-1$
+            File file = new File(ArchiPlugin.INSTANCE.getPluginFolder(), "LICENSE.txt"); //$NON-NLS-1$
             if(file.exists()) {
-                byte[] buffer = new byte[(int) file.length()];
-                BufferedInputStream is = null;
                 try {
-                    is = new BufferedInputStream(new FileInputStream(file));
-                    is.read(buffer);
+                    String content = new String(Files.readAllBytes(Paths.get(file.getPath())));
+                    licenseText.setText(content);
                 }
                 catch(IOException ex) {
                     ex.printStackTrace();
                 }
-                finally {
-                    if(is != null) {
-                        try {
-                            is.close();
-                        }
-                        catch(IOException ex) {
-                            ex.printStackTrace();
-                        }
-                    }
-                }
-                licenseText.setText(new String(buffer));
             }
         }
     }
@@ -212,6 +210,12 @@ public class AboutDialog extends TrayDialog {
         installationDetailsButton = createButton(parent, INSTALLATION_DETAILS_ID, Messages.AboutDialog_4, false);
         setButtonLayoutData(installationDetailsButton);
         
+        checkNewVersionAction = new CheckForNewVersionAction();
+        
+        checkNewVersionButton = createButton(parent, CHECK_UPDATE_ID, Messages.AboutDialog_7, false);
+        setButtonLayoutData(checkNewVersionButton);
+        checkNewVersionButton.setEnabled(checkNewVersionAction.isEnabled());
+
         createButton(parent, IDialogConstants.OK_ID, Messages.AboutDialog_6, true);
     }
 }

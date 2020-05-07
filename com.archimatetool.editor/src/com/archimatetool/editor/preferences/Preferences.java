@@ -7,7 +7,7 @@ package com.archimatetool.editor.preferences;
 
 import org.eclipse.jface.preference.IPreferenceStore;
 
-import com.archimatetool.editor.ArchimateEditorPlugin;
+import com.archimatetool.editor.ArchiPlugin;
 
 
 
@@ -18,7 +18,7 @@ import com.archimatetool.editor.ArchimateEditorPlugin;
  */
 public class Preferences implements IPreferenceConstants {
     
-    public static IPreferenceStore STORE = ArchimateEditorPlugin.INSTANCE.getPreferenceStore();
+    public static IPreferenceStore STORE = ArchiPlugin.INSTANCE.getPreferenceStore();
 
     public static String getUserDataFolder() {
         return STORE.getString(USER_DATA_FOLDER);
@@ -44,14 +44,6 @@ public class Preferences implements IPreferenceConstants {
         return STORE.getBoolean(OPEN_DIAGRAMS_ON_LOAD);
     }
     
-    public static boolean doAnimate() {
-        return STORE.getBoolean(ANIMATE);
-    }
-    
-    public static int getAnimationSpeed() {
-        return STORE.getInt(ANIMATION_SPEED);
-    }
-    
     public static boolean useAntiAliasing() {
         return STORE.getBoolean(ANTI_ALIAS);
     }
@@ -74,10 +66,6 @@ public class Preferences implements IPreferenceConstants {
     
     public static boolean doShowPalette() {
         return STORE.getBoolean(PALETTE_STATE);
-    }
-    
-    public static boolean doAnimateMagicConnector() {
-        return STORE.getBoolean(ANIMATE_MAGIC_CONNECTOR);
     }
     
     public static boolean isMagicConnectorPolarity() {

@@ -7,6 +7,7 @@ package com.archimatetool.canvas.templates.wizard;
 
 import java.io.File;
 
+import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ControlAdapter;
@@ -28,9 +29,10 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
 
+import com.archimatetool.canvas.CanvasEditorPlugin;
 import com.archimatetool.canvas.model.ICanvasModel;
 import com.archimatetool.canvas.templates.model.CanvasTemplateManager;
-import com.archimatetool.editor.ui.IArchimateImages;
+import com.archimatetool.editor.ui.IArchiImages;
 import com.archimatetool.editor.ui.UIUtils;
 import com.archimatetool.editor.utils.StringUtils;
 import com.archimatetool.templates.model.TemplateManager;
@@ -57,13 +59,13 @@ public class SaveCanvasAsTemplateWizardPage extends WizardPage {
 
     private TemplateManager fTemplateManager;
     
-    static File CURRENT_FOLDER = new File(System.getProperty("user.home")); //$NON-NLS-1$
+    private static final String PREFS_LAST_FOLDER = "SaveCanvasAsTemplateLastFolder"; //$NON-NLS-1$
     
     public SaveCanvasAsTemplateWizardPage(ICanvasModel canvasModel, TemplateManager templateManager) {
         super("SaveCanvasAsTemplateWizardPage"); //$NON-NLS-1$
         setTitle(Messages.SaveCanvasAsTemplateWizardPage_0);
         setDescription(Messages.SaveCanvasAsTemplateWizardPage_1);
-        setImageDescriptor(IArchimateImages.ImageFactory.getImageDescriptor(IArchimateImages.ECLIPSE_IMAGE_NEW_WIZARD));
+        setImageDescriptor(IArchiImages.ImageFactory.getImageDescriptor(IArchiImages.ECLIPSE_IMAGE_NEW_WIZARD));
         fCanvasModel = canvasModel;
         fTemplateManager = templateManager;
     }
@@ -87,13 +89,23 @@ public class SaveCanvasAsTemplateWizardPage extends WizardPage {
         label = new Label(fileComposite, SWT.NULL);
         label.setText(Messages.SaveCanvasAsTemplateWizardPage_2);
         
-        fFileTextField = new Text(fileComposite, SWT.BORDER | SWT.SINGLE);
+        fFileTextField = UIUtils.createSingleTextControl(fileComposite, SWT.BORDER, false);
         fFileTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        File newFile = new File(CURRENT_FOLDER, Messages.SaveCanvasAsTemplateWizardPage_3 + CanvasTemplateManager.CANVAS_TEMPLATE_FILE_EXTENSION);
-        fFileTextField.setText(newFile.getPath());
-        // Single text control so strip CRLFs
-        UIUtils.conformSingleTextControl(fFileTextField);
+        
+        String defaultFileName = Messages.SaveCanvasAsTemplateWizardPage_3 + CanvasTemplateManager.CANVAS_TEMPLATE_FILE_EXTENSION;
+        
+        // Get last folder used
+        String lastFolderName = CanvasEditorPlugin.INSTANCE.getPreferenceStore().getString(PREFS_LAST_FOLDER);
+        File lastFolder = new File(lastFolderName);
+        if(lastFolder.exists() && lastFolder.isDirectory()) {
+            fFileTextField.setText(new File(lastFolder, defaultFileName).getPath());
+        }
+        else {
+            fFileTextField.setText(new File(System.getProperty("user.home"), defaultFileName).getPath()); //$NON-NLS-1$
+        }
+        
         fFileTextField.addModifyListener(new ModifyListener() {
+            @Override
             public void modifyText(ModifyEvent e) {
                 validateFields();
             }
@@ -107,7 +119,6 @@ public class SaveCanvasAsTemplateWizardPage extends WizardPage {
                 File file = chooseFile();
                 if(file != null) {
                     fFileTextField.setText(file.getPath());
-                    CURRENT_FOLDER = file.getParentFile();
                 }
             }
         });
@@ -120,14 +131,15 @@ public class SaveCanvasAsTemplateWizardPage extends WizardPage {
         label = new Label(fieldGroup, SWT.NULL);
         label.setText(Messages.SaveCanvasAsTemplateWizardPage_5);
 
-        fNameTextField = new Text(fieldGroup, SWT.BORDER | SWT.SINGLE);
+        fNameTextField = UIUtils.createSingleTextControl(fieldGroup, SWT.BORDER, false);
         fNameTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        
         if(StringUtils.isSet(fCanvasModel.getName())) {
             fNameTextField.setText(fCanvasModel.getName());
         }
-        // Single text control so strip CRLFs
-        UIUtils.conformSingleTextControl(fNameTextField);
+        
         fNameTextField.addModifyListener(new ModifyListener() {
+            @Override
             public void modifyText(ModifyEvent e) {
                 validateFields();
             }
@@ -141,6 +153,7 @@ public class SaveCanvasAsTemplateWizardPage extends WizardPage {
         fDescriptionTextField = new Text(fieldGroup, SWT.BORDER | SWT.MULTI | SWT.WRAP | SWT.V_SCROLL);
         gd = new GridData(GridData.FILL_BOTH);
         gd.heightHint = 120;
+        gd.widthHint = 550; // Stop overstretch
         fDescriptionTextField.setLayoutData(gd);
         if(StringUtils.isSet(fCanvasModel.getDocumentation())) {
             fDescriptionTextField.setText(fCanvasModel.getDocumentation());
@@ -210,7 +223,7 @@ public class SaveCanvasAsTemplateWizardPage extends WizardPage {
         validateFields();
     }
     
-    /**
+    /**r
      * @return The File for the template
      */
     public String getFileName() {
@@ -279,4 +292,14 @@ public class SaveCanvasAsTemplateWizardPage extends WizardPage {
             fPreviewLabel.getImage().dispose();
         }
     }
+    
+    void storePreferences() {
+        // Store current folder
+        File parentFile = new File(getFileName()).getAbsoluteFile().getParentFile(); // Make sure to use absolute file
+        if(parentFile != null) {
+            IPreferenceStore store = CanvasEditorPlugin.INSTANCE.getPreferenceStore();
+            store.setValue(PREFS_LAST_FOLDER, parentFile.getAbsolutePath());
+        }
+    }
+
 }

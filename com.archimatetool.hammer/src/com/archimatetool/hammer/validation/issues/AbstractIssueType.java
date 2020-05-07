@@ -7,10 +7,8 @@ package com.archimatetool.hammer.validation.issues;
 
 import org.eclipse.swt.graphics.Image;
 
-import com.archimatetool.help.hints.IHelpHintProvider;
-import com.archimatetool.model.IArchimateComponent;
-import com.archimatetool.model.IDiagramModelArchimateConnection;
-import com.archimatetool.model.IDiagramModelArchimateObject;
+import com.archimatetool.model.IArchimateConcept;
+import com.archimatetool.model.IDiagramModelArchimateComponent;
 
 
 
@@ -44,54 +42,68 @@ public abstract class AbstractIssueType implements IIssue {
         setObject(obj);
     }
 
+    @Override
     public void setName(String name) {
         fName = name;
     }
 
+    @Override
     public String getName() {
         return fName;
     }
     
+    @Override
     public void setDescription(String description) {
         fDescription = description;
     }
 
+    @Override
     public String getDescription() {
         return fDescription;
     }
     
+    @Override
     public void setExplanation(String explanation) {
         fExplanation = explanation;
     }
     
+    @Override
     public String getExplanation() {
         return fExplanation;
     }
     
+    @Override
     public void setObject(Object obj) {
         fObject = obj;
     }
     
+    @Override
     public Object getObject() {
         return fObject;
     }
     
+    @Override
     public Image getImage() {
         return null;
     }
     
+    @Override
     public String getHelpHintTitle() {
         return getName();
     }
     
+    @Override
     public String getHelpHintContent() {
         return getExplanation();
     }
     
+    @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
     public Object getAdapter(Class adapter) {
-        if(adapter == IHelpHintProvider.class) {
-            return this;
+        // These are to update the Properties View...
+        
+        if(adapter == null) {
+            return null;
         }
         
         Object object = getObject();
@@ -99,16 +111,16 @@ public abstract class AbstractIssueType implements IIssue {
             return null;
         }
         
-        if(adapter.isInstance(object) || adapter.isInstance(this)) {
+        // Return the object
+        if(adapter.isInstance(object)) {
             return object;
         }
         
-        if(adapter.isAssignableFrom(IArchimateComponent.class)) {
-            if(object instanceof IDiagramModelArchimateObject) {
-                return ((IDiagramModelArchimateObject)object).getArchimateElement();
-            }
-            if(object instanceof IDiagramModelArchimateConnection) {
-                return ((IDiagramModelArchimateConnection)object).getRelationship();
+        // Archimate concept inside of diagram component
+        if(object instanceof IDiagramModelArchimateComponent) {
+            IArchimateConcept concept = ((IDiagramModelArchimateComponent)object).getArchimateConcept();
+            if(concept != null && adapter.isAssignableFrom(concept.getClass())) {
+                return concept;
             }
         }
         

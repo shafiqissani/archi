@@ -9,17 +9,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
-import org.eclipse.jface.viewers.IColorProvider;
-import org.eclipse.jface.viewers.IFontProvider;
+import org.eclipse.jface.viewers.CellEditor;
+import org.eclipse.jface.viewers.CellLabelProvider;
+import org.eclipse.jface.viewers.ColumnViewerEditor;
+import org.eclipse.jface.viewers.ColumnViewerEditorActivationEvent;
+import org.eclipse.jface.viewers.ColumnViewerEditorActivationStrategy;
+import org.eclipse.jface.viewers.ICellModifier;
 import org.eclipse.jface.viewers.ITreeContentProvider;
-import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.TreeViewer;
+import org.eclipse.jface.viewers.TreeViewerEditor;
 import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.viewers.ViewerCell;
+import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.jface.viewers.ViewerFilter;
-import org.eclipse.jface.viewers.ViewerSorter;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.DisposeEvent;
 import org.eclipse.swt.events.DisposeListener;
@@ -34,13 +38,18 @@ import com.archimatetool.editor.model.DiagramModelUtils;
 import com.archimatetool.editor.model.IEditorModelManager;
 import com.archimatetool.editor.preferences.IPreferenceConstants;
 import com.archimatetool.editor.preferences.Preferences;
-import com.archimatetool.editor.ui.ArchimateLabelProvider;
+import com.archimatetool.editor.ui.ArchiLabelProvider;
+import com.archimatetool.editor.ui.FontFactory;
+import com.archimatetool.editor.ui.UIUtils;
+import com.archimatetool.editor.ui.components.TreeTextCellEditor;
+import com.archimatetool.editor.views.tree.commands.RenameCommandHandler;
 import com.archimatetool.editor.views.tree.search.SearchFilter;
 import com.archimatetool.model.FolderType;
-import com.archimatetool.model.IArchimateComponent;
+import com.archimatetool.model.IArchimateConcept;
 import com.archimatetool.model.IArchimateModel;
+import com.archimatetool.model.IArchimateRelationship;
 import com.archimatetool.model.IFolder;
-import com.archimatetool.model.IRelationship;
+import com.archimatetool.model.INameable;
 
 
 
@@ -48,16 +57,20 @@ import com.archimatetool.model.IRelationship;
 /**
  * Tree Viewer for Model Tree View
  * 
+ * Text Cell Editing code inspired by http://ramkulkarni.com/blog/in-place-editing-in-eclipse-treeviewer/
+ * 
  * @author Phillip Beauvoir
  */
 public class TreeModelViewer extends TreeViewer {
-    
-    private TreeCellEditor fCellEditor;
     
     /**
      * Show elements as grey if not in Viewpoint
      */
     private TreeViewpointFilterProvider fViewpointFilterProvider;
+    
+    private Font fontItalic = FontFactory.getItalic(getTree().getFont());
+    private Font fontBold = FontFactory.getBold(getTree().getFont());;
+    
     
     /**
      * Application Preferences Listener
@@ -65,8 +78,15 @@ public class TreeModelViewer extends TreeViewer {
     private IPropertyChangeListener prefsListener = new IPropertyChangeListener() {
         @Override
         public void propertyChange(PropertyChangeEvent event) {
-            if(IPreferenceConstants.HIGHLIGHT_UNUSED_ELEMENTS_IN_MODEL_TREE.equals(event.getProperty())) {
-                refresh();
+            switch(event.getProperty()) {
+                case IPreferenceConstants.HIGHLIGHT_UNUSED_ELEMENTS_IN_MODEL_TREE:
+                    refresh();
+                    break;
+
+                case IPreferenceConstants.MODEL_TREE_FONT:
+                    setTreeFonts();
+                    refresh();
+                    break;
             }
         }
     };
@@ -74,14 +94,16 @@ public class TreeModelViewer extends TreeViewer {
     public TreeModelViewer(Composite parent, int style) {
         super(parent, style | SWT.MULTI);
         
+        // Fonts
+        setTreeFonts();
+
         setContentProvider(new ModelTreeViewerContentProvider());
         setLabelProvider(new ModelTreeViewerLabelProvider());
         
         setUseHashlookup(true);
         
         // Sort
-        setSorter(new ViewerSorter() {
-            @SuppressWarnings("unchecked")
+        setComparator(new ViewerComparator() {
             @Override
             public int compare(Viewer viewer, Object e1, Object e2) {
                 int cat1 = category(e1);
@@ -97,8 +119,8 @@ public class TreeModelViewer extends TreeViewer {
                     return 0;
                 }
                 
-                String name1 = ArchimateLabelProvider.INSTANCE.getLabel(e1);
-                String name2 = ArchimateLabelProvider.INSTANCE.getLabel(e2);
+                String name1 = ArchiLabelProvider.INSTANCE.getLabelNormalised(e1);
+                String name2 = ArchiLabelProvider.INSTANCE.getLabelNormalised(e2);
                 
                 if(name1 == null) {
                     name1 = "";//$NON-NLS-1$
@@ -107,7 +129,8 @@ public class TreeModelViewer extends TreeViewer {
                     name2 = "";//$NON-NLS-1$
                 }
                 
-                return getComparator().compare(name1, name2);
+                //return getComparator().compare(name1, name2);
+                return name1.compareToIgnoreCase(name2);
             }
             
             @Override
@@ -123,7 +146,45 @@ public class TreeModelViewer extends TreeViewer {
         });
         
         // Cell Editor
-        fCellEditor = new TreeCellEditor(getTree());
+        TreeTextCellEditor cellEditor = new TreeTextCellEditor(getTree());
+        setColumnProperties(new String[]{ "col1" }); //$NON-NLS-1$
+        setCellEditors(new CellEditor[]{ cellEditor });
+        
+        // Edit cell programmatically, not on mouse click
+        TreeViewerEditor.create(this, new ColumnViewerEditorActivationStrategy(this){
+            @Override
+            protected boolean isEditorActivationEvent(ColumnViewerEditorActivationEvent event) {
+                return event.eventType == ColumnViewerEditorActivationEvent.PROGRAMMATIC;
+            }  
+            
+        }, ColumnViewerEditor.DEFAULT);
+        
+        setCellEditors(new CellEditor[]{ cellEditor });
+        
+        setCellModifier(new ICellModifier() {
+            @Override
+            public void modify(Object element, String property, Object value) {
+                if(element instanceof TreeItem) {
+                    Object data = ((TreeItem)element).getData();
+                    if(data instanceof INameable) {
+                        RenameCommandHandler.doRenameCommand((INameable)data, value.toString());
+                    }
+                }
+            }
+            
+            @Override
+            public Object getValue(Object element, String property) {
+                if(element instanceof INameable) {
+                    return ((INameable)element).getName();
+                }
+                return null;
+            }
+            
+            @Override
+            public boolean canModify(Object element, String property) {
+                return RenameCommandHandler.canRename(element);
+            }
+        });
         
         // Filter
         fViewpointFilterProvider = new TreeViewpointFilterProvider(this);
@@ -132,6 +193,7 @@ public class TreeModelViewer extends TreeViewer {
         Preferences.STORE.addPropertyChangeListener(prefsListener);
         
         getTree().addDisposeListener(new DisposeListener() {
+            @Override
             public void widgetDisposed(DisposeEvent e) {
                 Preferences.STORE.removePropertyChangeListener(prefsListener);
             }
@@ -143,30 +205,22 @@ public class TreeModelViewer extends TreeViewer {
      * @param element the element to be edited
      */
     public void editElement(Object element) {
-        TreeItem item = findTreeItem(element);
-        if(item != null) {
-            fCellEditor.editItem(item);
-        }
+        editElement(element, 0);
     }
     
     @Override
-    public void refresh(Object element) {
-        if(isEditing()) {
-            fCellEditor.cancelEditing();
-        }
-        super.refresh(element);
-    }
-    
-    @Override
-    public void refresh(Object element, boolean updateLabels) {
-        if(isEditing()) {
-            fCellEditor.cancelEditing();
-        }
-        super.refresh(element, updateLabels);
-    }
-    
-    boolean isEditing() {
-        return fCellEditor != null && fCellEditor.isEditing();
+    public void editElement(Object element, int column) {
+        /*
+         * Important to set focus first!
+         * 
+         * 1. If the focus is on either the Hints, Help, Welcome, or Cheat Sheet Views (all Views with a Browser control)
+         * 2. "New Empty Model" or "New Model With Canvas" is selected from the main "File" menu
+         * 3. Or "Create a new ArchiMate Model" button pressed in the "Welcome" View
+         * 4. Then a focus lost event will occur
+         * 5. And cause a NPE in ColumnViewerEditor#activateCellEditor
+         */
+        getControl().setFocus();
+        super.editElement(element, column);
     }
     
     /**
@@ -175,6 +229,7 @@ public class TreeModelViewer extends TreeViewer {
      */
     void refreshInBackground(final Object element) {
         getControl().getDisplay().asyncExec(new Runnable() {
+            @Override
             public void run() {
                 if(!getControl().isDisposed()) { // check inside run loop
                     try {
@@ -218,23 +273,33 @@ public class TreeModelViewer extends TreeViewer {
         return super.getSortedChildren(parentElementOrTreePath);
     }
     
-    // ========================= Model Provoders =====================================
+    private void setTreeFonts() {
+        UIUtils.setFontFromPreferences(getTree(), IPreferenceConstants.MODEL_TREE_FONT, false);
+        fontItalic = FontFactory.getItalic(getTree().getFont());
+        fontBold = FontFactory.getBold(getTree().getFont());
+    }
+    
+    // ========================= Model Providers =====================================
     
     /**
      *  Content Provider
      */
-    class ModelTreeViewerContentProvider implements ITreeContentProvider {
+    private class ModelTreeViewerContentProvider implements ITreeContentProvider {
         
+        @Override
         public void inputChanged(Viewer v, Object oldInput, Object newInput) {
         }
         
+        @Override
         public void dispose() {
         }
         
+        @Override
         public Object[] getElements(Object parent) {
             return getChildren(parent);
         }
 
+        @Override
         public Object[] getChildren(Object parentElement) {
             if(parentElement instanceof IEditorModelManager) {
             	return ((IEditorModelManager)parentElement).getModels().toArray();
@@ -258,6 +323,7 @@ public class TreeModelViewer extends TreeViewer {
             return new Object[0];
         }
 
+        @Override
         public Object getParent(Object element) {
             if(element instanceof EObject) {
                 return ((EObject)element).eContainer();
@@ -265,6 +331,7 @@ public class TreeModelViewer extends TreeViewer {
             return null;
         }
 
+        @Override
         public boolean hasChildren(Object element) {
         	return getFilteredChildren(element).length > 0;
         }
@@ -273,13 +340,17 @@ public class TreeModelViewer extends TreeViewer {
     /**
      * Label Provider
      */
-    class ModelTreeViewerLabelProvider extends LabelProvider implements IFontProvider, IColorProvider {
-        Font fontItalic = JFaceResources.getFontRegistry().getItalic(""); //$NON-NLS-1$
-        Font fontBold = JFaceResources.getFontRegistry().getBold(""); //$NON-NLS-1$
-        
+    private class ModelTreeViewerLabelProvider extends CellLabelProvider {
         @Override
-        public String getText(Object element) {
-            String name = ArchimateLabelProvider.INSTANCE.getLabel(element);
+        public void update(ViewerCell cell) {
+            cell.setText(getText(cell.getElement()));
+            cell.setImage(getImage(cell.getElement()));
+            cell.setForeground(getForeground(cell.getElement()));
+            cell.setFont(getFont(cell.getElement()));
+        }
+        
+        String getText(Object element) {
+            String name = ArchiLabelProvider.INSTANCE.getLabelNormalised(element);
             
             // If a dirty model show asterisk
             if(element instanceof IArchimateModel) {
@@ -289,33 +360,32 @@ public class TreeModelViewer extends TreeViewer {
                 }
             }
             
-            if(element instanceof IRelationship) {
-                IRelationship relationship = (IRelationship)element;
+            if(element instanceof IArchimateRelationship) {
+                IArchimateRelationship relationship = (IArchimateRelationship)element;
                 name += " ("; //$NON-NLS-1$
-                name += ArchimateLabelProvider.INSTANCE.getLabel(relationship.getSource());
+                name += ArchiLabelProvider.INSTANCE.getLabelNormalised(relationship.getSource());
                 name += " - "; //$NON-NLS-1$
-                name += ArchimateLabelProvider.INSTANCE.getLabel(relationship.getTarget());
+                name += ArchiLabelProvider.INSTANCE.getLabelNormalised(relationship.getTarget());
                 name += ")"; //$NON-NLS-1$
             }
             
             return name;
         }
         
-        @Override
-        public Image getImage(Object element) {
-            return ArchimateLabelProvider.INSTANCE.getImage(element);
+        Image getImage(Object element) {
+            return ArchiLabelProvider.INSTANCE.getImage(element);
         }
         
-        @Override
-        public Font getFont(Object element) {
+        Font getFont(Object element) {
+            // Show bold if using Search
             SearchFilter filter = getSearchFilter();
             if(filter != null && filter.isFiltering() && filter.matchesFilter(element)) {
                 return fontBold;
             }
             
             // Italicise unused elements
-            if(Preferences.STORE.getBoolean(IPreferenceConstants.HIGHLIGHT_UNUSED_ELEMENTS_IN_MODEL_TREE) && element instanceof IArchimateComponent) {
-                if(!DiagramModelUtils.isArchimateComponentReferencedInDiagrams((IArchimateComponent)element)) {
+            if(Preferences.STORE.getBoolean(IPreferenceConstants.HIGHLIGHT_UNUSED_ELEMENTS_IN_MODEL_TREE) && element instanceof IArchimateConcept) {
+                if(!DiagramModelUtils.isArchimateConceptReferencedInDiagrams((IArchimateConcept)element)) {
                     return fontItalic;
                 }
             }
@@ -323,14 +393,9 @@ public class TreeModelViewer extends TreeViewer {
             return null;
         }
 
-        @Override
-        public Color getForeground(Object element) {
+        Color getForeground(Object element) {
             return fViewpointFilterProvider.getTextColor(element);
         }
-
-        @Override
-        public Color getBackground(Object element) {
-            return null;
-        }
     }
+    
 }

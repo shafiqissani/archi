@@ -12,11 +12,10 @@ import org.eclipse.gef.EditPart;
 import org.eclipse.gef.ui.actions.SelectionAction;
 import org.eclipse.ui.IWorkbenchPart;
 
-import com.archimatetool.editor.actions.ArchimateEditorActionFactory;
+import com.archimatetool.editor.actions.ArchiActionFactory;
 import com.archimatetool.editor.tools.GenerateViewCommand;
-import com.archimatetool.model.IArchimateComponent;
+import com.archimatetool.model.IArchimateConcept;
 import com.archimatetool.model.IArchimateElement;
-import com.archimatetool.model.IArchimateModel;
 
 
 
@@ -29,7 +28,7 @@ public class GenerateViewAction extends SelectionAction {
     
     public GenerateViewAction(IWorkbenchPart part) {
         super(part);
-        setId(ArchimateEditorActionFactory.GENERATE_VIEW.getId());
+        setId(ArchiActionFactory.GENERATE_VIEW.getId());
         setText(Messages.GenerateViewAction_0);
     }
 
@@ -41,20 +40,13 @@ public class GenerateViewAction extends SelectionAction {
     private List<IArchimateElement> getValidSelectedObjects() {
         List<IArchimateElement> list = new ArrayList<IArchimateElement>();
         
-        IArchimateModel model = null;
-        
         for(Object object : getSelectedObjects()) {
             if(object instanceof EditPart) {
-                Object o = ((EditPart)object).getAdapter(IArchimateComponent.class);
+                Object o = ((EditPart)object).getAdapter(IArchimateConcept.class);
                 if(o instanceof IArchimateElement) {
-                    IArchimateElement element = (IArchimateElement)o;
-                    IArchimateModel nextModel = element.getArchimateModel(); // From the same model
-                    if(model == null || model == nextModel) {
-                        if(!list.contains(element)) {
-                            list.add(element);
-                        }
+                    if(!list.contains(o)) {
+                        list.add((IArchimateElement)o);
                     }
-                    model = nextModel;
                 }
             }
         }

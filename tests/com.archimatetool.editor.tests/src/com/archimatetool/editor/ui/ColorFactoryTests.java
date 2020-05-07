@@ -8,7 +8,6 @@ package com.archimatetool.editor.ui;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import junit.framework.JUnit4TestAdapter;
 
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.RGB;
@@ -16,9 +15,14 @@ import org.junit.Test;
 
 import com.archimatetool.editor.preferences.IPreferenceConstants;
 import com.archimatetool.editor.preferences.Preferences;
+import com.archimatetool.editor.ui.factory.IGraphicalObjectUIProvider;
+import com.archimatetool.editor.ui.factory.ObjectUIFactory;
+import com.archimatetool.model.IArchimateElement;
 import com.archimatetool.model.IArchimateFactory;
 import com.archimatetool.model.IAssignmentRelationship;
 import com.archimatetool.model.IBusinessActor;
+
+import junit.framework.JUnit4TestAdapter;
 
 
 
@@ -72,18 +76,23 @@ public class ColorFactoryTests {
         assertEquals(1, color.getRed());
         assertEquals(2, color.getGreen());
         assertEquals(3, color.getBlue());
+        
+        Preferences.STORE.setToDefault(IPreferenceConstants.DEFAULT_FILL_COLOR_PREFIX + actor.eClass().getName());
     }
 
     @Test
     public void testGetInbuiltDefaultFillColor() {
-        Color color = ColorFactory.getInbuiltDefaultFillColor(IArchimateFactory.eINSTANCE.createBusinessActor());
-        assertEquals(ColorFactory.COLOR_BUSINESS, color);
+        IArchimateElement element = IArchimateFactory.eINSTANCE.createBusinessActor();
+        Color color = ColorFactory.getInbuiltDefaultFillColor(element);
+        assertEquals(((IGraphicalObjectUIProvider)ObjectUIFactory.INSTANCE.getProvider(element)).getDefaultColor(), color);
         
-        color = ColorFactory.getInbuiltDefaultFillColor(IArchimateFactory.eINSTANCE.createApplicationComponent());
-        assertEquals(ColorFactory.COLOR_APPLICATION, color);
+        element = IArchimateFactory.eINSTANCE.createApplicationComponent();
+        color = ColorFactory.getInbuiltDefaultFillColor(element);
+        assertEquals(((IGraphicalObjectUIProvider)ObjectUIFactory.INSTANCE.getProvider(element)).getDefaultColor(), color);
         
-        color = ColorFactory.getInbuiltDefaultFillColor(IArchimateFactory.eINSTANCE.createNetwork());
-        assertEquals(ColorFactory.COLOR_TECHNOLOGY, color);
+        element = IArchimateFactory.eINSTANCE.createCommunicationNetwork();
+        color = ColorFactory.getInbuiltDefaultFillColor(element);
+        assertEquals(((IGraphicalObjectUIProvider)ObjectUIFactory.INSTANCE.getProvider(element)).getDefaultColor(), color);
     }
 
     @Test

@@ -5,16 +5,16 @@
  */
 package com.archimatetool.editor.model;
 
-import junit.framework.TestSuite;
-
 import com.archimatetool.editor.model.commands.CommandsTests;
 import com.archimatetool.editor.model.compatibility.ModelCompatibilityTests;
+import com.archimatetool.editor.model.compatibility.handlers.ArchiMate2To3HandlerTests;
 import com.archimatetool.editor.model.compatibility.handlers.FixDefaultSizesHandlerTests;
+import com.archimatetool.editor.model.compatibility.handlers.OutlineOpacityHandlerTests;
 import com.archimatetool.editor.model.impl.ArchiveManagerTests;
 import com.archimatetool.editor.model.impl.ByteArrayStorageTests;
 import com.archimatetool.editor.model.impl.EditorModelManagerTests;
-import com.archimatetool.editor.model.viewpoints.AllViewpointTests;
-import com.archimatetool.editor.model.viewpoints.ViewpointsManagerTests;
+
+import junit.framework.TestSuite;
 
 @SuppressWarnings("nls")
 public class AllModelTests {
@@ -35,17 +35,15 @@ public class AllModelTests {
         suite.addTest(ModelCompatibilityTests.suite());
         
         // model.compatibility.handlers
+        suite.addTest(ArchiMate2To3HandlerTests.suite());
         suite.addTest(FixDefaultSizesHandlerTests.suite());
+        suite.addTest(OutlineOpacityHandlerTests.suite());
 
         // model.impl
         suite.addTest(ArchiveManagerTests.suite());
         suite.addTest(ByteArrayStorageTests.suite());
 		suite.addTest(EditorModelManagerTests.suite());
 		
-        // model.viewpoints
-		suite.addTest(AllViewpointTests.suite());
-		suite.addTest(ViewpointsManagerTests.suite());
-
 		return suite;
 	}
 

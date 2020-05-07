@@ -5,11 +5,7 @@
  */
 package com.archimatetool.editor.diagram.sketch;
 
-import java.util.Hashtable;
-import java.util.Map.Entry;
-
 import org.eclipse.draw2d.ColorConstants;
-import org.eclipse.draw2d.SWTGraphics;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.gef.palette.CombinedTemplateCreationEntry;
 import org.eclipse.gef.palette.ConnectionCreationToolEntry;
@@ -32,9 +28,9 @@ import org.eclipse.swt.widgets.Display;
 import com.archimatetool.editor.diagram.AbstractPaletteRoot;
 import com.archimatetool.editor.diagram.tools.FormatPainterToolEntry;
 import com.archimatetool.editor.diagram.tools.PanningSelectionExtendedTool;
-import com.archimatetool.editor.ui.ArchimateLabelProvider;
+import com.archimatetool.editor.ui.ArchiLabelProvider;
 import com.archimatetool.editor.ui.ColorFactory;
-import com.archimatetool.editor.ui.IArchimateImages;
+import com.archimatetool.editor.ui.IArchiImages;
 import com.archimatetool.model.IArchimatePackage;
 import com.archimatetool.model.IDiagramModelConnection;
 
@@ -48,8 +44,6 @@ import com.archimatetool.model.IDiagramModelConnection;
 public class SketchEditorPalette extends AbstractPaletteRoot {
     
     private FormatPainterToolEntry formatPainterEntry;
-    
-    private Hashtable<Color, StickyImageDescriptor> fImageTable = new Hashtable<Color, StickyImageDescriptor>();
     
     public SketchEditorPalette() {
         createControlsGroup();
@@ -114,9 +108,9 @@ public class SketchEditorPalette extends AbstractPaletteRoot {
         add(group);
         
         // Sticky Notes
-        group.add(createStickyEntry(ColorFactory.COLOR_BUSINESS));
-        group.add(createStickyEntry(ColorFactory.COLOR_APPLICATION));
-        group.add(createStickyEntry(ColorFactory.COLOR_TECHNOLOGY));
+        group.add(createStickyEntry(ColorFactory.get(255, 255, 181)));
+        group.add(createStickyEntry(ColorFactory.get(181, 255, 255)));
+        group.add(createStickyEntry(ColorFactory.get(201, 231, 183)));
         group.add(createStickyEntry(ColorConstants.orange));
         group.add(createStickyEntry(ColorConstants.yellow));
         group.add(createStickyEntry(ColorConstants.lightGreen));
@@ -135,7 +129,7 @@ public class SketchEditorPalette extends AbstractPaletteRoot {
                 IDiagramModelConnection.LINE_SOLID,
                 Messages.SketchEditorPalette_8,
                 null,
-                IArchimateImages.ImageFactory.getImageDescriptor(IArchimateImages.ICON_CONNECTION_PLAIN_16));
+                IArchiImages.ImageFactory.getImageDescriptor(IArchiImages.ICON_CONNECTION_PLAIN));
         group.add(entry);
         
         entry = createConnectionCreationToolEntry(
@@ -143,7 +137,7 @@ public class SketchEditorPalette extends AbstractPaletteRoot {
                 IDiagramModelConnection.ARROW_FILL_TARGET,
                 Messages.SketchEditorPalette_9,
                 null,
-                IArchimateImages.ImageFactory.getImageDescriptor(IArchimateImages.ICON_CONNECTION_ARROW_16));
+                IArchiImages.ImageFactory.getImageDescriptor(IArchiImages.ICON_CONNECTION_ARROW));
         group.add(entry);
         
         entry = createConnectionCreationToolEntry(
@@ -151,7 +145,7 @@ public class SketchEditorPalette extends AbstractPaletteRoot {
                 IDiagramModelConnection.ARROW_FILL_TARGET | IDiagramModelConnection.LINE_DASHED,
                 Messages.SketchEditorPalette_10,
                 null,
-                IArchimateImages.ImageFactory.getImageDescriptor(IArchimateImages.ICON_CONNECTION_DASHED_ARROW_16));
+                IArchiImages.ImageFactory.getImageDescriptor(IArchiImages.ICON_CONNECTION_DASHED_ARROW));
         group.add(entry);
         
         entry = createConnectionCreationToolEntry(
@@ -159,7 +153,7 @@ public class SketchEditorPalette extends AbstractPaletteRoot {
                 IDiagramModelConnection.ARROW_FILL_TARGET | IDiagramModelConnection.LINE_DOTTED,
                 Messages.SketchEditorPalette_11,
                 null,
-                IArchimateImages.ImageFactory.getImageDescriptor(IArchimateImages.ICON_CONNECTION_DOTTED_ARROW_16));
+                IArchiImages.ImageFactory.getImageDescriptor(IArchiImages.ICON_CONNECTION_DOTTED_ARROW));
         group.add(entry);
 
         return group;
@@ -184,59 +178,38 @@ public class SketchEditorPalette extends AbstractPaletteRoot {
                 name,
                 description,
                 new SketchModelFactory(eClass),
-                ArchimateLabelProvider.INSTANCE.getImageDescriptor(eClass),
-                ArchimateLabelProvider.INSTANCE.getImageDescriptor(eClass));
+                ArchiLabelProvider.INSTANCE.getImageDescriptor(eClass),
+                ArchiLabelProvider.INSTANCE.getImageDescriptor(eClass));
     }
 
     private PaletteEntry createStickyEntry(Color color) {
+        ImageDescriptor id = new ImageDescriptor() {
+            @Override
+            public ImageData getImageData(int zoom) {
+                Image image = new Image(Display.getDefault(), 16, 14);
+                
+                GC gc = new GC(image);
+                gc.setBackground(color);
+                gc.fillRectangle(0, 0, 15, 13);
+                gc.drawRectangle(0, 0, 15, 13);
+                gc.dispose();
+                
+                ImageData id = image.getImageData(zoom);
+                image.dispose();
+                
+                return id;
+           }
+        };
+
         return new CombinedTemplateCreationEntry(
                 Messages.SketchEditorPalette_12,
                 null,
                 new SketchModelFactory(IArchimatePackage.eINSTANCE.getSketchModelSticky(), color),
-                getStickyImageDescriptor(color),
-                getStickyImageDescriptor(color));
+                id,
+                id);
     }
     
-    private ImageDescriptor getStickyImageDescriptor(Color color) {
-        StickyImageDescriptor id = fImageTable.get(color);
-        if(id == null) {
-            id = new StickyImageDescriptor(color);
-            fImageTable.put(color, id);
-        }
-        return id;
-    }
-    
-    public void dispose() {
-        for(Entry<Color, StickyImageDescriptor> entry : fImageTable.entrySet()) {
-            entry.getValue().image.dispose();
-        }
-        
+    void dispose() {
         formatPainterEntry.dispose();
-    }
-    
-    class StickyImageDescriptor extends ImageDescriptor {
-        Image image;
-        
-        StickyImageDescriptor(Color color) {
-            image = new Image(Display.getDefault(), 16, 14);
-            GC gc = new GC(image);
-            SWTGraphics graphics = new SWTGraphics(gc);
-            graphics.setBackgroundColor(color);
-            graphics.fillRectangle(0, 0, 15, 13);
-            graphics.drawRectangle(0, 0, 15, 13);
-            gc.dispose();
-            graphics.dispose();
-        }
-        
-        @Override
-        public ImageData getImageData() {
-            return image.getImageData();
-        }
-        
-        public void dispose() {
-            if(image != null && !image.isDisposed()) {
-                image.dispose();
-            }
-        }
     }
 }

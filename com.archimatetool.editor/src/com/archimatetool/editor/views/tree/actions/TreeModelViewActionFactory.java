@@ -17,10 +17,15 @@ import org.eclipse.jface.action.IAction;
 
 import com.archimatetool.editor.preferences.IPreferenceConstants;
 import com.archimatetool.editor.preferences.Preferences;
-import com.archimatetool.editor.ui.ArchimateLabelProvider;
-import com.archimatetool.editor.ui.IArchimateImages;
+import com.archimatetool.editor.ui.ArchiLabelProvider;
+import com.archimatetool.editor.ui.IArchiImages;
+import com.archimatetool.editor.ui.factory.IObjectUIProvider;
+import com.archimatetool.editor.ui.factory.ObjectUIFactory;
 import com.archimatetool.editor.views.tree.commands.NewDiagramCommand;
 import com.archimatetool.editor.views.tree.commands.NewElementCommand;
+import com.archimatetool.editor.views.tree.commands.NewFolderCommand;
+import com.archimatetool.model.FolderType;
+import com.archimatetool.model.IArchimateConcept;
 import com.archimatetool.model.IArchimateElement;
 import com.archimatetool.model.IArchimateFactory;
 import com.archimatetool.model.IDiagramModel;
@@ -51,82 +56,115 @@ public class TreeModelViewActionFactory {
      */
     public List<IAction> getNewObjectActions(Object selected) {
         List<IAction> list = new ArrayList<IAction>();
-
-        // If we have selected a leaf object, go up to parent
-        if(selected instanceof IArchimateElement || selected instanceof IDiagramModel) {
+        
+        // If we have selected a leaf object, go up to its parent
+        if(selected instanceof IArchimateConcept || selected instanceof IDiagramModel) {
             selected = ((EObject)selected).eContainer();
         }
         
-        // We want a folder
+        // We haven't got a parent folder
         if(!(selected instanceof IFolder)) {
             return list;
         }
         
-        IFolder folder = (IFolder)selected;
+        IFolder selectedFolder = (IFolder)selected;
         
-        // Find topmost folder type
-        IFolder f = folder;
-        while(f.eContainer() instanceof IFolder) {
-            f = (IFolder)f.eContainer();
+        list.add(createNewFolderAction((IFolder)selected));
+        list.add(null);
+        
+        // Find the topmost folder type
+        IFolder topMostFolder = selectedFolder;
+        while(topMostFolder.eContainer() instanceof IFolder) {
+            topMostFolder = (IFolder)topMostFolder.eContainer();
         }
 
-        switch(f.getType()) {
+        switch(topMostFolder.getType()) {
+            case STRATEGY:
+                for(EClass eClass : ArchimateModelUtils.getStrategyClasses()) {
+                    IAction action = createNewElementAction(selectedFolder, eClass);
+                    list.add(action);
+                }
+                break;
+
             case BUSINESS:
                 for(EClass eClass : ArchimateModelUtils.getBusinessClasses()) {
-                    IAction action = createNewElementAction(folder, eClass);
+                    IAction action = createNewElementAction(selectedFolder, eClass);
                     list.add(action);
                 }
                 break;
 
             case APPLICATION:
                 for(EClass eClass : ArchimateModelUtils.getApplicationClasses()) {
-                    IAction action = createNewElementAction(folder, eClass);
+                    IAction action = createNewElementAction(selectedFolder, eClass);
                     list.add(action);
                 }
                 break;
 
             case MOTIVATION:
                 for(EClass eClass : ArchimateModelUtils.getMotivationClasses()) {
-                    IAction action = createNewElementAction(folder, eClass);
+                    IAction action = createNewElementAction(selectedFolder, eClass);
                     list.add(action);
                 }
                 break;
 
             case IMPLEMENTATION_MIGRATION:
                 for(EClass eClass : ArchimateModelUtils.getImplementationMigrationClasses()) {
-                    IAction action = createNewElementAction(folder, eClass);
+                    IAction action = createNewElementAction(selectedFolder, eClass);
                     list.add(action);
                 }
                 break;
 
             case TECHNOLOGY:
+                // Technology
                 for(EClass eClass : ArchimateModelUtils.getTechnologyClasses()) {
-                    IAction action = createNewElementAction(folder, eClass);
+                    IAction action = createNewElementAction(selectedFolder, eClass);
+                    list.add(action);
+                }
+                
+                list.add(null);
+                
+                // Physical
+                for(EClass eClass : ArchimateModelUtils.getPhysicalClasses()) {
+                    IAction action = createNewElementAction(selectedFolder, eClass);
                     list.add(action);
                 }
                 break;
 
-            case CONNECTORS:
+            case OTHER:
+                // Grouping and Location
+                for(EClass eClass : ArchimateModelUtils.getOtherClasses()) {
+                    IAction action = createNewElementAction(selectedFolder, eClass);
+                    list.add(action);
+                }
+                
+                list.add(null);
+                
+                // Connectors
                 for(EClass eClass : ArchimateModelUtils.getConnectorClasses()) {
-                    IAction action = createNewElementAction(folder, eClass);
+                    IAction action = createNewElementAction(selectedFolder, eClass);
                     list.add(action);
                 }
                 break;
                 
             case DIAGRAMS:
-                list.add(createNewArchimateDiagramAction(folder));
-                list.add(createNewSketchAction(folder));
+                list.add(createNewArchimateDiagramAction(selectedFolder));
+                list.add(createNewSketchAction(selectedFolder));
                 break;
 
             default:
                 break;
+        }
+        
+        // Remove any trailing separator
+        if(list.get(list.size() - 1) == null) {
+            list.remove(list.size() - 1);
         }
 
         return list;
     }
 
     private IAction createNewElementAction(final IFolder folder, final EClass eClass) {
-        IAction action = new Action(ArchimateLabelProvider.INSTANCE.getDefaultName(eClass)) {
+        IAction action = new Action(ArchiLabelProvider.INSTANCE.getDefaultName(eClass)) {
             @Override
             public void run() {
                 // Create a new Archimate Element, set its name
@@ -139,7 +177,7 @@ public class TreeModelViewActionFactory {
             }
         };
 
-        action.setImageDescriptor(ArchimateLabelProvider.INSTANCE.getImageDescriptor(eClass));
+        action.setImageDescriptor(ArchiLabelProvider.INSTANCE.getImageDescriptor(eClass));
         return action;
     }
     
@@ -158,7 +196,7 @@ public class TreeModelViewActionFactory {
             }
         };
 
-        action.setImageDescriptor(IArchimateImages.ImageFactory.getImageDescriptor(IArchimateImages.ICON_DIAGRAM_16));
+        action.setImageDescriptor(IArchiImages.ImageFactory.getImageDescriptor(IArchiImages.ICON_DIAGRAM));
         return action;
     }
     
@@ -181,7 +219,28 @@ public class TreeModelViewActionFactory {
             }
         };
 
-        action.setImageDescriptor(IArchimateImages.ImageFactory.getImageDescriptor(IArchimateImages.ICON_SKETCH_16));
+        action.setImageDescriptor(IArchiImages.ImageFactory.getImageDescriptor(IArchiImages.ICON_SKETCH));
+        return action;
+    }
+    
+    private IAction createNewFolderAction(final IFolder folder) {
+        IAction action = new Action(Messages.NewFolderAction_0) {
+            @Override
+            public void run() {
+                // Create a new Folder, set its name
+                IFolder newFolder = IArchimateFactory.eINSTANCE.createFolder();
+                newFolder.setName(Messages.NewFolderAction_1);
+                newFolder.setType(FolderType.USER);
+                
+                // Execute Command
+                Command cmd = new NewFolderCommand(folder, newFolder);
+                CommandStack commandStack = (CommandStack)folder.getAdapter(CommandStack.class);
+                commandStack.execute(cmd);
+            }
+        };
+
+        IObjectUIProvider provider = ObjectUIFactory.INSTANCE.getProvider(folder);
+        action.setImageDescriptor(provider.getImageDescriptor());
         return action;
     }
 }

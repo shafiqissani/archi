@@ -18,9 +18,9 @@ import org.eclipse.emf.ecore.util.EObjectContainmentEList;
 import org.eclipse.emf.ecore.util.InternalEList;
 
 import com.archimatetool.model.IArchimatePackage;
+import com.archimatetool.model.IConnectable;
 import com.archimatetool.model.IDiagramModelBendpoint;
 import com.archimatetool.model.IDiagramModelConnection;
-import com.archimatetool.model.IDiagramModelObject;
 import com.archimatetool.model.IDocumentable;
 import com.archimatetool.model.IFontAttribute;
 import com.archimatetool.model.ILineObject;
@@ -34,6 +34,7 @@ import com.archimatetool.model.IProperty;
  * <!-- end-user-doc -->
  * <p>
  * The following features are implemented:
+ * </p>
  * <ul>
  *   <li>{@link com.archimatetool.model.impl.DiagramModelConnection#getFont <em>Font</em>}</li>
  *   <li>{@link com.archimatetool.model.impl.DiagramModelConnection#getFontColor <em>Font Color</em>}</li>
@@ -48,11 +49,10 @@ import com.archimatetool.model.IProperty;
  *   <li>{@link com.archimatetool.model.impl.DiagramModelConnection#getBendpoints <em>Bendpoints</em>}</li>
  *   <li>{@link com.archimatetool.model.impl.DiagramModelConnection#getType <em>Type</em>}</li>
  * </ul>
- * </p>
  *
  * @generated
  */
-public class DiagramModelConnection extends DiagramModelComponent implements IDiagramModelConnection {
+public class DiagramModelConnection extends Connectable implements IDiagramModelConnection {
     /**
      * The default value of the '{@link #getFont() <em>Font</em>}' attribute.
      * <!-- begin-user-doc -->
@@ -211,7 +211,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * @generated
      * @ordered
      */
-    protected IDiagramModelObject source;
+    protected IConnectable source;
 
     /**
      * The cached value of the '{@link #getTarget() <em>Target</em>}' reference.
@@ -221,7 +221,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * @generated
      * @ordered
      */
-    protected IDiagramModelObject target;
+    protected IConnectable target;
 
     /**
      * The cached value of the '{@link #getBendpoints() <em>Bendpoints</em>}' containment reference list.
@@ -262,6 +262,16 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
         super();
     }
 
+    @Override
+    public boolean isNameVisible() {
+        return getFeatures().getBoolean(FEATURE_NAME_VISIBLE, FEATURE_NAME_VISIBLE_DEFAULT);
+    }
+    
+    @Override
+    public void setNameVisible(boolean value) {
+        getFeatures().putBoolean(FEATURE_NAME_VISIBLE, value, FEATURE_NAME_VISIBLE_DEFAULT);
+    }
+
     /**
      * <!-- begin-user-doc -->
      * <!-- end-user-doc -->
@@ -277,6 +287,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public String getFont() {
         return font;
     }
@@ -286,6 +297,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public void setFont(String newFont) {
         String oldFont = font;
         font = newFont;
@@ -298,6 +310,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public String getFontColor() {
         return fontColor;
     }
@@ -307,6 +320,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public void setFontColor(String newFontColor) {
         String oldFontColor = fontColor;
         fontColor = newFontColor;
@@ -319,6 +333,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public EList<IProperty> getProperties() {
         if (properties == null) {
             properties = new EObjectContainmentEList<IProperty>(IProperty.class, this, IArchimatePackage.DIAGRAM_MODEL_CONNECTION__PROPERTIES);
@@ -331,6 +346,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public String getDocumentation() {
         return documentation;
     }
@@ -340,6 +356,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public void setDocumentation(String newDocumentation) {
         String oldDocumentation = documentation;
         documentation = newDocumentation;
@@ -353,6 +370,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public String getText() {
         return text;
     }
@@ -363,6 +381,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public void setText(String newText) {
         String oldText = text;
         text = newText;
@@ -375,7 +394,8 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
-    public IDiagramModelObject getSource() {
+    @Override
+    public IConnectable getSource() {
         return source;
     }
 
@@ -384,8 +404,9 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
-    public void setSource(IDiagramModelObject newSource) {
-        IDiagramModelObject oldSource = source;
+    @Override
+    public void setSource(IConnectable newSource) {
+        IConnectable oldSource = source;
         source = newSource;
         if (eNotificationRequired())
             eNotify(new ENotificationImpl(this, Notification.SET, IArchimatePackage.DIAGRAM_MODEL_CONNECTION__SOURCE, oldSource, source));
@@ -396,7 +417,8 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
-    public IDiagramModelObject getTarget() {
+    @Override
+    public IConnectable getTarget() {
         return target;
     }
 
@@ -405,8 +427,9 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
-    public void setTarget(IDiagramModelObject newTarget) {
-        IDiagramModelObject oldTarget = target;
+    @Override
+    public void setTarget(IConnectable newTarget) {
+        IConnectable oldTarget = target;
         target = newTarget;
         if (eNotificationRequired())
             eNotify(new ENotificationImpl(this, Notification.SET, IArchimatePackage.DIAGRAM_MODEL_CONNECTION__TARGET, oldTarget, target));
@@ -417,6 +440,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public EList<IDiagramModelBendpoint> getBendpoints() {
         if (bendpoints == null) {
             bendpoints = new EObjectContainmentEList<IDiagramModelBendpoint>(IDiagramModelBendpoint.class, this, IArchimatePackage.DIAGRAM_MODEL_CONNECTION__BENDPOINTS);
@@ -429,6 +453,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public int getLineWidth() {
         return lineWidth;
     }
@@ -438,6 +463,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public void setLineWidth(int newLineWidth) {
         int oldLineWidth = lineWidth;
         lineWidth = newLineWidth;
@@ -450,6 +476,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public String getLineColor() {
         return lineColor;
     }
@@ -459,6 +486,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public void setLineColor(String newLineColor) {
         String oldLineColor = lineColor;
         lineColor = newLineColor;
@@ -471,6 +499,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public int getTextPosition() {
         return textPosition;
     }
@@ -480,6 +509,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public void setTextPosition(int newTextPosition) {
         int oldTextPosition = textPosition;
         textPosition = newTextPosition;
@@ -492,6 +522,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public int getType() {
         return type;
     }
@@ -501,6 +532,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public void setType(int newType) {
         int oldType = type;
         type = newType;
@@ -513,7 +545,8 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated NOT
      */
-    public void connect(IDiagramModelObject source, IDiagramModelObject target) {
+    @Override
+    public void connect(IConnectable source, IConnectable target) {
         if(source == null || target == null) {
             throw new IllegalArgumentException("Source or Target cannot be null"); //$NON-NLS-1$
         }
@@ -524,8 +557,11 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
         }
         
         disconnect();
+        
+        // TODO: Why isn't this setSource() and setTarget()? Surely that would fire the correct eNotification?
         this.source = source;
-        this.target = target;        
+        this.target = target;  
+        
         reconnect();
     }
 
@@ -534,6 +570,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated NOT
      */
+    @Override
     public void disconnect() {
         if(source != null && target != null) {
             source.removeConnection(this);
@@ -546,6 +583,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
      * <!-- end-user-doc -->
      * @generated NOT
      */
+    @Override
     public void reconnect() {
         if(source != null && target != null) {
             source.addConnection(this);
@@ -572,8 +610,13 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
     @Override
     public EObject getCopy() {
         IDiagramModelConnection newConnection = (IDiagramModelConnection)super.getCopy();
+
         newConnection.setSource(null);
         newConnection.setTarget(null);
+        
+        newConnection.getSourceConnections().clear();
+        newConnection.getTargetConnections().clear();
+
         return newConnection;
     }
 
@@ -648,10 +691,10 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
                 setTextPosition((Integer)newValue);
                 return;
             case IArchimatePackage.DIAGRAM_MODEL_CONNECTION__SOURCE:
-                setSource((IDiagramModelObject)newValue);
+                setSource((IConnectable)newValue);
                 return;
             case IArchimatePackage.DIAGRAM_MODEL_CONNECTION__TARGET:
-                setTarget((IDiagramModelObject)newValue);
+                setTarget((IConnectable)newValue);
                 return;
             case IArchimatePackage.DIAGRAM_MODEL_CONNECTION__BENDPOINTS:
                 getBendpoints().clear();
@@ -697,10 +740,10 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
                 setTextPosition(TEXT_POSITION_EDEFAULT);
                 return;
             case IArchimatePackage.DIAGRAM_MODEL_CONNECTION__SOURCE:
-                setSource((IDiagramModelObject)null);
+                setSource((IConnectable)null);
                 return;
             case IArchimatePackage.DIAGRAM_MODEL_CONNECTION__TARGET:
-                setTarget((IDiagramModelObject)null);
+                setTarget((IConnectable)null);
                 return;
             case IArchimatePackage.DIAGRAM_MODEL_CONNECTION__BENDPOINTS:
                 getBendpoints().clear();
@@ -829,7 +872,7 @@ public class DiagramModelConnection extends DiagramModelComponent implements IDi
     public String toString() {
         if (eIsProxy()) return super.toString();
 
-        StringBuffer result = new StringBuffer(super.toString());
+        StringBuilder result = new StringBuilder(super.toString());
         result.append(" (font: "); //$NON-NLS-1$
         result.append(font);
         result.append(", fontColor: "); //$NON-NLS-1$

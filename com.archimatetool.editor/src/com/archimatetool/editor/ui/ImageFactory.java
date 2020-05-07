@@ -8,6 +8,7 @@ package com.archimatetool.editor.ui;
 import org.eclipse.jface.resource.CompositeImageDescriptor;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.resource.ImageRegistry;
+import org.eclipse.jface.resource.ResourceLocator;
 import org.eclipse.jface.viewers.DecorationOverlayIcon;
 import org.eclipse.jface.viewers.IDecoration;
 import org.eclipse.swt.SWT;
@@ -15,11 +16,17 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.ImageDataProvider;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 
+import com.archimatetool.editor.preferences.IPreferenceConstants;
+import com.archimatetool.editor.preferences.Preferences;
 import com.archimatetool.editor.ui.components.CompositeMultiImageDescriptor;
+import com.archimatetool.editor.utils.PlatformUtils;
 
 
 
@@ -33,10 +40,51 @@ public class ImageFactory {
     private AbstractUIPlugin fPlugin;
     
     /**
+     * @return The actual device zoom level.
+     */
+    public static int getDeviceZoom() {
+        // This is needed if we are running from the Command Line to init Display and thus ensure DPIUtil.setDeviceZoom(int) is called
+        // when com.archimatetool.editor.preferences.PreferenceInitializer calls this method
+        Display.getDefault();
+        
+        String deviceZoom = System.getProperty("org.eclipse.swt.internal.deviceZoom"); //$NON-NLS-1$
+        return deviceZoom == null ? 100 : Integer.parseInt(deviceZoom);
+    }
+
+    /**
+     * @return The zoom level for creating images.
+     * Windows OS with scaling > 100 needs to export images at x2 size
+     * If Preferences are set to not use a scaled device zoom then return 100
+     */
+    public static int getImageDeviceZoom() {
+        boolean scaleImages = Preferences.STORE.getBoolean(IPreferenceConstants.SCALE_IMAGE_EXPORT);
+        int deviceZoom = getDeviceZoom();
+        // If scaling prefs x2 is true and device zoom is 100 then return 200
+        // Else return device zoom
+        // Else 100
+        return scaleImages ? (deviceZoom == 100) ? 200 : deviceZoom : 100;
+    }
+    
+    /**
+     * @return The zoom level for creating objects such as cursors.
+     * Windows with double scale is the exception
+     */
+    public static int getLogicalDeviceZoom() {
+        return PlatformUtils.isWindows() ? getDeviceZoom() : 100;
+    }
+    
+    /**
      * @param plugin The plug-in where we can find the images
      */
     public ImageFactory(AbstractUIPlugin plugin) {
         fPlugin = plugin;
+    }
+    
+    /**
+     * @return The plugin that owns this ImageFactory
+     */
+    public AbstractUIPlugin getPlugin() {
+        return fPlugin;
     }
     
     /**
@@ -64,36 +112,32 @@ public class ImageFactory {
     }
     
     /**
-     * Return a composite overlay image
+     * Return a composite image with overlay image
      * 
-     * @param imageName
-     * @param overlayName
+     * @param underlay The underlay image
+     * @param overlayName Name of the overlay image
      * @param quadrant the quadrant (one of {@link IDecoration} 
      * ({@link IDecoration#TOP_LEFT}, {@link IDecoration#TOP_RIGHT},
      * {@link IDecoration#BOTTOM_LEFT}, {@link IDecoration#BOTTOM_RIGHT} 
      * or {@link IDecoration#UNDERLAY})
-     * @return
+     * @return The image
      */
-    public Image getOverlayImage(String imageName, String overlayName, int quadrant) {
-        // Make a registry name, cached
-        String key_name = imageName + overlayName + quadrant;
+    public Image getOverlayImage(Image underlay, String overlayName, int quadrant) {
+        String key = underlay.hashCode() + overlayName + quadrant;
         
-        Image image = getImage(key_name);
-        
-        // Make it and cache it
-        if(image == null) {
-            Image underlay = getImage(imageName);
-            ImageDescriptor overlay = getImageDescriptor(overlayName);
-            if(underlay != null && overlay != null) {
-                image = new DecorationOverlayIcon(underlay, overlay, quadrant).createImage();
-                if(image != null) {
+        Image newImage = getImage(key);
+        if(newImage == null) {
+            ImageDescriptor overlayDescripter = getImageDescriptor(overlayName);
+            if(overlayDescripter != null) {
+                newImage = new DecorationOverlayIcon(underlay, overlayDescripter, quadrant).createImage();
+                if(newImage != null) {
                     ImageRegistry registry = fPlugin.getImageRegistry();
-                    registry.put(key_name, image);
+                    registry.put(key, newImage);
                 }
             }
         }
         
-        return image;
+        return newImage != null ? newImage : underlay;
     }
     
     /**
@@ -120,7 +164,42 @@ public class ImageFactory {
 
         return image;
     }
+
+    /**
+     * Get an Image with the given RGB value instead of the original palette value
+     */
+    public Image getImageWithRGB(String imageName, RGB rgb) {
+        String rgbName = imageName + ColorFactory.convertRGBToString(rgb);
+        ImageRegistry registry = fPlugin.getImageRegistry();
+        
+        Image image = registry.get(rgbName);
+        
+        // Create local ImageDescriptor and try again
+        if(image == null) {
+            getImageDescriptorWithRGB(imageName, rgb);
+            image = registry.get(rgbName);
+        }
+
+        return image;
+    }
     
+    /**
+     * @param image The image to scale
+     * @return an autoscaled image depending on current device zoom
+     */
+    public static Image getAutoScaledImage(Image image) {
+        final ImageData imageData = image.getImageData(getDeviceZoom());
+        image.dispose();
+        
+        return new Image(Display.getCurrent(), new ImageDataProvider() {
+            @SuppressWarnings("restriction")
+            @Override
+            public ImageData getImageData(int zoom) {
+                return org.eclipse.swt.internal.DPIUtil.autoScaleImageData(Display.getCurrent(), imageData, zoom, getDeviceZoom());
+            }
+        });
+    }
+
     /**
      * Return a composite image consisting of many images
      * 
@@ -166,11 +245,50 @@ public class ImageFactory {
         ImageRegistry registry = fPlugin.getImageRegistry();
         ImageDescriptor id = registry.getDescriptor(imageName);
         if(id == null) {
-            id = AbstractUIPlugin.imageDescriptorFromPlugin(fPlugin.getBundle().getSymbolicName(), imageName);
-            registry.put(imageName, id); // The image will be created next when registry.get(imageName) is called
+            id = ResourceLocator.imageDescriptorFromBundle(fPlugin.getBundle().getSymbolicName(), imageName).orElse(null);
+            if(id != null) {
+                registry.put(imageName, id); // The image will be created next when registry.get(imageName) is called
+            }
+            else {
+                // Can be null in the case of overlay images where the image name is a composite name
+                //System.err.println("Could not get Image Descriptor for: " + imageName); //$NON-NLS-1$
+            }
         }
         
         return id;
+    }
+
+    /**
+     * Get an ImageDescriptor with the given RGB value instead of the original palette value
+     */
+    public ImageDescriptor getImageDescriptorWithRGB(String imageName, RGB rgb) {
+        String rgbName = imageName + ColorFactory.convertRGBToString(rgb);
+        
+        ImageRegistry registry = fPlugin.getImageRegistry();
+        ImageDescriptor newImageDescriptor = registry.getDescriptor(rgbName);
+        
+        // Create a new ImageDescriptor that sets the pixel to RGB
+        if(newImageDescriptor == null) {
+            newImageDescriptor = new ImageDescriptor() {
+                @Override
+                public ImageData getImageData(int zoom) {
+                    ImageData id = getImageDescriptor(imageName).getImageData(zoom);
+                    int pixel = id.palette.getPixel(rgb);
+                    
+                    for(int x = 0; x < id.width; x++) {
+                        for(int y = 0; y < id.height; y++) {
+                            id.setPixel(x, y, pixel);
+                        }
+                    }
+                    
+                    return id;
+                }
+            };
+            
+            registry.put(rgbName, newImageDescriptor);
+        }
+
+        return newImageDescriptor;
     }
 
     /**
@@ -203,7 +321,7 @@ public class ImageFactory {
         Image image;
         
         // If there is a transparency pixel set copy the source ImageData to preserve it
-        ImageData sourceImageData = source.getImageData();
+        ImageData sourceImageData = source.getImageData(getDeviceZoom());
         if(sourceImageData.transparentPixel != -1) {
             ImageData id = new ImageData(width, height, sourceImageData.depth, sourceImageData.palette);
             id.transparentPixel = sourceImageData.transparentPixel;

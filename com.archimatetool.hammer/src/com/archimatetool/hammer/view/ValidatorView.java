@@ -23,6 +23,7 @@ import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.layout.TreeColumnLayout;
 import org.eclipse.jface.preference.PreferenceDialog;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.resource.ResourceLocator;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelection;
@@ -43,16 +44,14 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.dialogs.PreferencesUtil;
 import org.eclipse.ui.part.ViewPart;
-import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.views.properties.IPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.ITabbedPropertySheetPageContributor;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
-import com.archimatetool.editor.ArchimateEditorPlugin;
-import com.archimatetool.editor.diagram.IArchimateDiagramEditor;
+import com.archimatetool.editor.ArchiPlugin;
 import com.archimatetool.editor.diagram.IDiagramModelEditor;
 import com.archimatetool.editor.model.IEditorModelManager;
-import com.archimatetool.editor.ui.ArchimateLabelProvider;
+import com.archimatetool.editor.ui.ArchiLabelProvider;
 import com.archimatetool.editor.ui.services.EditorManager;
 import com.archimatetool.editor.ui.services.ViewManager;
 import com.archimatetool.editor.utils.PlatformUtils;
@@ -61,7 +60,7 @@ import com.archimatetool.hammer.IHammerImages;
 import com.archimatetool.hammer.validation.Validator;
 import com.archimatetool.hammer.validation.issues.IIssue;
 import com.archimatetool.help.hints.IHintsView;
-import com.archimatetool.model.IArchimateComponent;
+import com.archimatetool.model.IArchimateConcept;
 import com.archimatetool.model.IArchimateModel;
 import com.archimatetool.model.IDiagramModel;
 import com.archimatetool.model.IDiagramModelComponent;
@@ -96,12 +95,14 @@ implements IValidatorView, ISelectionListener, IContextProvider, ITabbedProperty
         fViewer = new ValidatorViewer(treeComp, SWT.NULL);
         
         fViewer.addDoubleClickListener(new IDoubleClickListener() {
+            @Override
             public void doubleClick(DoubleClickEvent event) {
                 selectObjects((IStructuredSelection)event.getSelection());
             }
         });
         
         fViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+            @Override
             public void selectionChanged(SelectionChangedEvent event) {
                 updateMenuItems((IStructuredSelection)event.getSelection());
             }
@@ -131,6 +132,7 @@ implements IValidatorView, ISelectionListener, IContextProvider, ITabbedProperty
         // Table row bug on Yosemite https://bugs.eclipse.org/bugs/show_bug.cgi?id=446534
         if(PlatformUtils.isMac() && System.getProperty("os.version").startsWith("10.10")) {  //$NON-NLS-1$//$NON-NLS-2$
             Display.getCurrent().asyncExec(new Runnable() {
+                @Override
                 public void run() {
                     validateModel();
                 }
@@ -158,7 +160,7 @@ implements IValidatorView, ISelectionListener, IContextProvider, ITabbedProperty
             
             @Override
             public ImageDescriptor getImageDescriptor() {
-                return IHammerImages.ImageFactory.getImageDescriptor(IHammerImages.ICON_APP_16);
+                return IHammerImages.ImageFactory.getImageDescriptor(IHammerImages.ICON_APP);
             }
         };
         fActionValidate.setEnabled(false);
@@ -176,7 +178,7 @@ implements IValidatorView, ISelectionListener, IContextProvider, ITabbedProperty
             
             @Override
             public ImageDescriptor getImageDescriptor() {
-                return AbstractUIPlugin.imageDescriptorFromPlugin("com.archimatetool.help", "img/hint-16.png"); //$NON-NLS-1$ //$NON-NLS-2$
+                return ResourceLocator.imageDescriptorFromBundle("com.archimatetool.help", "img/hint.png").orElse(null); //$NON-NLS-1$ //$NON-NLS-2$
             }
         };
         fActionExplain.setEnabled(false);
@@ -237,6 +239,7 @@ implements IValidatorView, ISelectionListener, IContextProvider, ITabbedProperty
         menuMgr.setRemoveAllWhenShown(true);
         
         menuMgr.addMenuListener(new IMenuListener() {
+            @Override
             public void menuAboutToShow(IMenuManager manager) {
                 fillContextMenu(manager);
             }
@@ -284,12 +287,13 @@ implements IValidatorView, ISelectionListener, IContextProvider, ITabbedProperty
         return fViewer;
     }
 
+    @Override
     public void selectionChanged(IWorkbenchPart part, ISelection selection) {
         if(part == this || part == null) {
             return;
         }
         
-        IArchimateModel model = (IArchimateModel)part.getAdapter(IArchimateModel.class);
+        IArchimateModel model = part.getAdapter(IArchimateModel.class);
         
         if(model != null) {
             fModel = model;
@@ -300,15 +304,15 @@ implements IValidatorView, ISelectionListener, IContextProvider, ITabbedProperty
     
     void selectObjects(IStructuredSelection selection) {
         if(selection != null) {
-            List<IArchimateComponent> treeList = new ArrayList<IArchimateComponent>();
+            List<IArchimateConcept> treeList = new ArrayList<IArchimateConcept>();
             List<IDiagramModel> viewList = new ArrayList<IDiagramModel>();
             List<IDiagramModelComponent> viewComponentList = new ArrayList<IDiagramModelComponent>();
             
             for(Object o : selection.toArray()) {
                 if(o instanceof IIssue) {
                     IIssue issue = (IIssue)o;
-                    if(issue.getObject() instanceof IArchimateComponent) {
-                        treeList.add((IArchimateComponent)issue.getObject());
+                    if(issue.getObject() instanceof IArchimateConcept) {
+                        treeList.add((IArchimateConcept)issue.getObject());
                     }
                     else if(issue.getObject() instanceof IDiagramModel) {
                         viewList.add((IDiagramModel)issue.getObject());
@@ -329,17 +333,22 @@ implements IValidatorView, ISelectionListener, IContextProvider, ITabbedProperty
             
             if(!viewList.isEmpty()) {
                 for(IDiagramModel dm : viewList) {
-                    IDiagramModelEditor editor = EditorManager.openDiagramEditor(dm);
-                    if(editor instanceof IArchimateDiagramEditor) {
-                        ((IArchimateDiagramEditor)editor).selectObjects(viewComponentList.toArray());
+                    IDiagramModelEditor editor = EditorManager.openDiagramEditor(dm, false);
+                    if(editor != null) {
+                        // Needs to be asyncExec to allow EditorPart to open if it is currently closed
+                        getSite().getShell().getDisplay().asyncExec(()-> { 
+                            editor.selectObjects(viewComponentList.toArray());
+                        });
                     }
                 }
             }
        }
     }
     
+    @Override
     public void validateModel() {
         BusyIndicator.showWhile(null, new Runnable() {
+            @Override
             public void run() {
                 updateStatusBar();
                 Validator validator = new Validator(fModel);
@@ -352,8 +361,8 @@ implements IValidatorView, ISelectionListener, IContextProvider, ITabbedProperty
     
     private void updateStatusBar() {
         if(fModel != null) {
-            getViewSite().getActionBars().getStatusLineManager().setMessage(ArchimateLabelProvider.INSTANCE.getImage(fModel),
-                    ArchimateLabelProvider.INSTANCE.getLabel(fModel));
+            getViewSite().getActionBars().getStatusLineManager().setMessage(ArchiLabelProvider.INSTANCE.getImage(fModel),
+                    ArchiLabelProvider.INSTANCE.getLabel(fModel));
         }
         else {
             getViewSite().getActionBars().getStatusLineManager().setMessage(null, ""); //$NON-NLS-1$
@@ -384,7 +393,7 @@ implements IValidatorView, ISelectionListener, IContextProvider, ITabbedProperty
         return false;
     }
     
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "unchecked"})
     @Override
     public Object getAdapter(Class adapter) {
         /*
@@ -399,7 +408,7 @@ implements IValidatorView, ISelectionListener, IContextProvider, ITabbedProperty
 
     @Override
     public String getContributorId() {
-        return ArchimateEditorPlugin.PLUGIN_ID;
+        return ArchiPlugin.PLUGIN_ID;
     }
 
     // =================================================================================
@@ -436,14 +445,17 @@ implements IValidatorView, ISelectionListener, IContextProvider, ITabbedProperty
     //                       Contextual Help support
     // =================================================================================
 
+    @Override
     public int getContextChangeMask() {
         return NONE;
     }
 
+    @Override
     public IContext getContext(Object target) {
         return HelpSystem.getContext(HELP_ID);
     }
 
+    @Override
     public String getSearchExpression(Object target) {
         return Messages.ValidatorView_3;
     }

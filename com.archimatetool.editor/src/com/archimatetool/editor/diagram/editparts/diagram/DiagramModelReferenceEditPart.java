@@ -12,9 +12,8 @@ import org.eclipse.gef.RequestConstants;
 import org.eclipse.gef.requests.LocationRequest;
 import org.eclipse.gef.tools.DirectEditManager;
 
-import com.archimatetool.editor.diagram.directedit.LabelDirectEditManager;
+import com.archimatetool.editor.diagram.directedit.MultiLineTextDirectEditManager;
 import com.archimatetool.editor.diagram.editparts.AbstractConnectedEditPart;
-import com.archimatetool.editor.diagram.figures.IDiagramModelObjectFigure;
 import com.archimatetool.editor.diagram.figures.diagram.DiagramModelReferenceFigure;
 import com.archimatetool.editor.diagram.policies.ArchimateDiagramConnectionPolicy;
 import com.archimatetool.editor.diagram.policies.PartComponentEditPolicy;
@@ -73,13 +72,8 @@ public class DiagramModelReferenceEditPart extends AbstractConnectedEditPart {
     }
 
     @Override
-    public IDiagramModelObjectFigure getFigure() {
-        return (IDiagramModelObjectFigure)super.getFigure();
-    }
-
-    @Override
     protected void refreshFigure() {
-        ((IDiagramModelObjectFigure)figure).refreshVisuals();
+        getFigure().refreshVisuals();
     }
 
     @Override
@@ -108,6 +102,7 @@ public class DiagramModelReferenceEditPart extends AbstractConnectedEditPart {
     }
 
     protected DirectEditManager createDirectEditManager() {
-        return new LabelDirectEditManager(this, getFigure().getTextControl());
+        //return new LabelDirectEditManager(this, getFigure().getTextControl(), getModel().getName());
+        return new MultiLineTextDirectEditManager(this, true);
     }
 }

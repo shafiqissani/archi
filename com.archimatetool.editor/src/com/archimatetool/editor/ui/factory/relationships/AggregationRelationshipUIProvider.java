@@ -10,8 +10,9 @@ import org.eclipse.gef.EditPart;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
 
-import com.archimatetool.editor.diagram.editparts.connections.AggregationConnectionEditPart;
-import com.archimatetool.editor.ui.IArchimateImages;
+import com.archimatetool.editor.diagram.editparts.ArchimateRelationshipEditPart;
+import com.archimatetool.editor.diagram.figures.connections.AggregationConnectionFigure;
+import com.archimatetool.editor.ui.IArchiImages;
 import com.archimatetool.model.IArchimatePackage;
 
 
@@ -21,15 +22,16 @@ import com.archimatetool.model.IArchimatePackage;
  * 
  * @author Phillip Beauvoir
  */
-public class AggregationRelationshipUIProvider extends AbstractRelationshipUIProvider {
+public class AggregationRelationshipUIProvider extends AbstractArchimateRelationshipUIProvider {
 
+    @Override
     public EClass providerFor() {
         return IArchimatePackage.eINSTANCE.getAggregationRelationship();
     }
     
     @Override
     public EditPart createEditPart() {
-        return new AggregationConnectionEditPart();
+        return new ArchimateRelationshipEditPart(AggregationConnectionFigure.class);
     }
 
     @Override
@@ -39,11 +41,11 @@ public class AggregationRelationshipUIProvider extends AbstractRelationshipUIPro
 
     @Override
     public Image getImage() {
-        return IArchimateImages.ImageFactory.getImage(IArchimateImages.ICON_AGGREGATION_CONNECTION_16);
+        return IArchiImages.ImageFactory.getImage(IArchiImages.ICON_AGGREGATION_RELATION);
     }
 
     @Override
     public ImageDescriptor getImageDescriptor() {
-        return IArchimateImages.ImageFactory.getImageDescriptor(IArchimateImages.ICON_AGGREGATION_CONNECTION_16);
+        return IArchiImages.ImageFactory.getImageDescriptor(IArchiImages.ICON_AGGREGATION_RELATION);
     }
 }

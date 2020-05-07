@@ -18,8 +18,7 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 
 import com.archimatetool.editor.preferences.Preferences;
-import com.archimatetool.editor.ui.IArchimateImages;
-import com.archimatetool.editor.utils.PlatformUtils;
+import com.archimatetool.editor.ui.IArchiImages;
 import com.archimatetool.editor.utils.StringUtils;
 
 
@@ -77,11 +76,7 @@ public class FloatingPalette {
     }
     
     private void createShell() {
-        int style = SWT.TOOL | SWT.RESIZE | SWT.CLOSE;
-        if(PlatformUtils.isMac()) {
-            style |= SWT.ON_TOP; // SWT.ON_TOP is needed on Mac to ensure Focus click-through, but doesn't work on GTK
-        }
-        fShell = new Shell(fParentShell, style);
+        fShell = new Shell(fParentShell, SWT.TOOL | SWT.RESIZE | SWT.CLOSE);
         
         if(fPaletteState.isTranslucent) {
             fShell.setAlpha(210);
@@ -90,11 +85,12 @@ public class FloatingPalette {
         checkSafeBounds(fParentShell);
         fShell.setBounds(fPaletteState.bounds);
         
-        fShell.setImage(IArchimateImages.ImageFactory.getImage(IArchimateImages.ICON_APP_16));
+        fShell.setImage(IArchiImages.ImageFactory.getImage(IArchiImages.ICON_APP));
         fShell.setText(Messages.FloatingPalette_0);
         
         // Disposed by system
         fShell.addDisposeListener(new DisposeListener() {
+            @Override
             public void widgetDisposed(DisposeEvent e) {
                 if(fClient != null) {
                     fClient.dispose();
@@ -122,7 +118,7 @@ public class FloatingPalette {
         GridData gd = new GridData(SWT.FILL, SWT.FILL, true, true);
         fClient.setLayoutData(gd);
         
-        fPalettePage = (PalettePage)fEditor.getAdapter(PalettePage.class);
+        fPalettePage = fEditor.getAdapter(PalettePage.class);
         fPalettePage.createControl(fClient);
     }
     

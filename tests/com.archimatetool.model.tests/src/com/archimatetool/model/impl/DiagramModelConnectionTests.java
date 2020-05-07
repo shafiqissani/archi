@@ -44,14 +44,6 @@ public class DiagramModelConnectionTests extends DiagramModelComponentTests {
 
     @Test
     public void testGetID() {
-        assertNull(component.getId());
-        
-        IArchimateModel model = IArchimateFactory.eINSTANCE.createArchimateModel();
-        model.getDefaultFolderForElement(dm).getElements().add(dm);
-        IDiagramModelGroup dmo = IArchimateFactory.eINSTANCE.createDiagramModelGroup();
-        dm.getChildren().add(dmo);
-        connection.connect(dmo, dmo);
-        
         assertNotNull(connection.getId());
     }
     
@@ -64,6 +56,20 @@ public class DiagramModelConnectionTests extends DiagramModelComponentTests {
         connection.connect(dmo, dmo);
         
         assertSame(dm, connection.getDiagramModel());
+    }
+
+    @Test
+    public void testGetArchimateModel() {
+        assertNull(connection.getArchimateModel());
+        
+        IArchimateModel model = IArchimateFactory.eINSTANCE.createArchimateModel();
+        model.getDefaultFolderForObject(dm).getElements().add(dm);
+        
+        IDiagramModelGroup dmo = IArchimateFactory.eINSTANCE.createDiagramModelGroup();
+        dm.getChildren().add(dmo);
+        connection.connect(dmo, dmo);
+        
+        assertSame(model, connection.getArchimateModel());
     }
 
     @Test
@@ -120,6 +126,13 @@ public class DiagramModelConnectionTests extends DiagramModelComponentTests {
         assertEquals(1, connection.getLineWidth());
         connection.setLineWidth(2);
         assertEquals(2, connection.getLineWidth());
+    }
+    
+    @Test
+    public void testNameVisible() {
+        assertTrue(connection.isNameVisible());
+        connection.setNameVisible(false);
+        assertFalse(connection.isNameVisible());
     }
     
     @Test
@@ -193,13 +206,17 @@ public class DiagramModelConnectionTests extends DiagramModelComponentTests {
     private void testPreConnect() {
         assertNull(connection.getSource());
         assertNull(connection.getTarget());
-        assertFalse(source.getSourceConnections().contains(source));
-        assertFalse(target.getTargetConnections().contains(target));
+        
+        assertFalse(source.getSourceConnections().contains(connection));
+        assertFalse(source.getTargetConnections().contains(connection));
+
+        assertFalse(target.getTargetConnections().contains(connection));
+        assertFalse(target.getSourceConnections().contains(connection));
     }
     
     private void testPostConnect() {
-        assertEquals(source, connection.getSource());
-        assertEquals(target, connection.getTarget());
+        assertSame(source, connection.getSource());
+        assertSame(target, connection.getTarget());
         
         assertTrue(source.getSourceConnections().contains(connection));
         assertFalse(source.getTargetConnections().contains(connection));

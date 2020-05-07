@@ -16,7 +16,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-import com.archimatetool.editor.ui.IArchimateImages;
+import com.archimatetool.editor.ui.IArchiImages;
 import com.archimatetool.editor.ui.UIUtils;
 import com.archimatetool.editor.utils.StringUtils;
 
@@ -34,6 +34,7 @@ public class SearchTextWidget extends Composite {
     private Label fCancelLabel;
     
     private ModifyListener fModifyListener = new ModifyListener() {
+        @Override
         public void modifyText(ModifyEvent e) {
             String text = getText();
             if("".equals(text) && fCancelLabel != null && !fCancelLabel.isDisposed()) { //$NON-NLS-1$
@@ -43,7 +44,7 @@ public class SearchTextWidget extends Composite {
             }
             else if(fCancelLabel == null) {
                 fCancelLabel = new Label(SearchTextWidget.this, SWT.NULL);
-                fCancelLabel.setImage(IArchimateImages.ImageFactory.getImage(IArchimateImages.ICON_CANCEL_SEARCH_16));
+                fCancelLabel.setImage(IArchiImages.ImageFactory.getImage(IArchiImages.ICON_CANCEL_SEARCH));
                 fCancelLabel.setBackground(fTextControl.getBackground());
                 
                 GridData gd = new GridData(SWT.NONE, SWT.FILL, false, true);
@@ -73,17 +74,14 @@ public class SearchTextWidget extends Composite {
         setLayout(layout);
         
         Label label = new Label(this, SWT.NULL);
-        label.setImage(IArchimateImages.ImageFactory.getImage(IArchimateImages.ICON_SEARCH_16));
+        label.setImage(IArchiImages.ImageFactory.getImage(IArchiImages.ICON_SEARCH));
         GridData gd = new GridData(SWT.NONE, SWT.FILL, false, true);
         label.setLayoutData(gd);
         
-        fTextControl = new Text(this, SWT.NULL);
+        fTextControl = UIUtils.createSingleTextControl(this, SWT.NONE, false);
         gd = new GridData(SWT.FILL, SWT.FILL, true, true);
         fTextControl.setLayoutData(gd);
         fTextControl.addModifyListener(fModifyListener);
-        
-        // Single text control so strip CRLFs
-        UIUtils.conformSingleTextControl(fTextControl);
         
         label.setBackground(fTextControl.getBackground());
         setBackground(fTextControl.getBackground());

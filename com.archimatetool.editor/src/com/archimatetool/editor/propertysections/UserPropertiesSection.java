@@ -5,21 +5,22 @@
  */
 package com.archimatetool.editor.propertysections;
 
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 
 import org.eclipse.draw2d.ColorConstants;
-import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.util.BasicEList;
 import org.eclipse.emf.common.util.ECollections;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.commands.CompoundCommand;
 import org.eclipse.jface.action.Action;
@@ -35,24 +36,28 @@ import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.util.LocalSelectionTransfer;
 import org.eclipse.jface.viewers.CellEditor;
+import org.eclipse.jface.viewers.CellLabelProvider;
 import org.eclipse.jface.viewers.CheckboxTableViewer;
-import org.eclipse.jface.viewers.ColumnPixelData;
 import org.eclipse.jface.viewers.ColumnViewer;
+import org.eclipse.jface.viewers.ColumnViewerEditor;
+import org.eclipse.jface.viewers.ColumnViewerEditorActivationEvent;
+import org.eclipse.jface.viewers.ColumnViewerEditorActivationStrategy;
+import org.eclipse.jface.viewers.ColumnViewerToolTipSupport;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.EditingSupport;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.ITableColorProvider;
-import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
+import org.eclipse.jface.viewers.TableViewerEditor;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.viewers.ViewerSorter;
+import org.eclipse.jface.viewers.ViewerCell;
+import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.DND;
@@ -79,32 +84,37 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.ToolBar;
+import org.eclipse.ui.IActionBars;
+import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 
 import com.archimatetool.editor.model.commands.EObjectFeatureCommand;
 import com.archimatetool.editor.model.commands.EObjectNonNotifyingCompoundCommand;
-import com.archimatetool.editor.ui.IArchimateImages;
-import com.archimatetool.editor.ui.components.CellEditorGlobalActionHandler;
+import com.archimatetool.editor.preferences.IPreferenceConstants;
+import com.archimatetool.editor.ui.IArchiImages;
+import com.archimatetool.editor.ui.UIUtils;
 import com.archimatetool.editor.ui.components.ExtendedTitleAreaDialog;
+import com.archimatetool.editor.ui.components.GlobalActionDisablementHandler;
 import com.archimatetool.editor.ui.components.StringComboBoxCellEditor;
+import com.archimatetool.editor.ui.components.UpdatingTableColumnLayout;
 import com.archimatetool.editor.utils.HTMLUtils;
 import com.archimatetool.editor.utils.StringUtils;
 import com.archimatetool.model.IArchimateFactory;
 import com.archimatetool.model.IArchimateModel;
-import com.archimatetool.model.IArchimateModelElement;
+import com.archimatetool.model.IArchimateModelObject;
 import com.archimatetool.model.IArchimatePackage;
-import com.archimatetool.model.IDiagramModelComponent;
 import com.archimatetool.model.IProperties;
 import com.archimatetool.model.IProperty;
+import com.archimatetool.model.util.LightweightEContentAdapter;
 
 
 
 /**
- * User Properties Section for an Archimate Element, Archimate Model or Diagram Model
+ * User Properties Section
  * 
  * @author Phillip Beauvoir
  */
-public class UserPropertiesSection extends AbstractArchimatePropertySection {
+public class UserPropertiesSection extends AbstractECorePropertySection {
 
     private static final String HELP_ID = "com.archimatetool.help.userProperties"; //$NON-NLS-1$
 
@@ -113,81 +123,71 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
      */
     public static class Filter extends ObjectFilter {
         @Override
-        protected boolean isRequiredType(Object object) {
+        public boolean isRequiredType(Object object) {
             return object instanceof IProperties;
         }
 
         @Override
-        protected Class<?> getAdaptableType() {
+        public Class<?> getAdaptableType() {
             return IProperties.class;
         }
     }
-
-    /*
-     * Adapter to listen to changes made elsewhere (including Undo/Redo commands)
-     * This one is a EContentAdapter to listen to child IProperty changes
-     */
-    private Adapter eAdapter = new EContentAdapter() {
-        private boolean ignoreMessages;
-
-        @Override
-        public void notifyChanged(Notification msg) {
-            super.notifyChanged(msg);
-
-            if(msg.getEventType() == EObjectNonNotifyingCompoundCommand.START) {
-                ignoreMessages = true;
-                return;
-            }
-            else if(msg.getEventType() == EObjectNonNotifyingCompoundCommand.END) {
-                ignoreMessages = false;
-                fTableViewer.refresh();
-            }
-
-            if(!ignoreMessages) {
-                Object feature = msg.getFeature();
-                if(feature == IArchimatePackage.Literals.PROPERTIES__PROPERTIES) {
-                    fTableViewer.refresh();
-                }
-                if(feature == IArchimatePackage.Literals.PROPERTY__KEY
-                        || feature == IArchimatePackage.Literals.PROPERTY__VALUE) {
-                    fTableViewer.update(msg.getNotifier(), null);
-                }
-            }
-        }
-    };
 
     private IProperties fPropertiesElement;
 
     private TableViewer fTableViewer;
     private IAction fActionNewProperty, fActionNewMultipleProperty, fActionRemoveProperty, fActionShowKeyEditor;
 
+    private boolean ignoreMessages;
+    
     @Override
     protected void createControls(Composite parent) {
         createTableControl(parent);
-    }
-
-    @Override
-    protected void setElement(Object element) {
-        fPropertiesElement = (IProperties)new Filter().adaptObject(element);
-        if(fPropertiesElement == null) {
-            System.err.println(getClass() + " failed to get element for " + element); //$NON-NLS-1$
-        }
         
-        refreshControls();
+        // We are interested in listening to notifications from child IProperty objects
+        ((LightweightEContentAdapter)getECoreAdapter()).addClass(IProperty.class);
     }
 
-    protected void refreshControls() {
+    @Override
+    protected void notifyChanged(Notification msg) {
+        super.notifyChanged(msg);
+        
+        if(msg.getEventType() == EObjectNonNotifyingCompoundCommand.START) {
+            ignoreMessages = true;
+            return;
+        }
+        else if(msg.getEventType() == EObjectNonNotifyingCompoundCommand.END) {
+            ignoreMessages = false;
+            fTableViewer.refresh();
+        }
+
+        if(!ignoreMessages) {
+            Object feature = msg.getFeature();
+
+            if(feature == IArchimatePackage.Literals.PROPERTIES__PROPERTIES) {
+                fTableViewer.refresh();
+            }
+
+            if(feature == IArchimatePackage.Literals.PROPERTY__KEY
+                    || feature == IArchimatePackage.Literals.PROPERTY__VALUE) {
+                fTableViewer.update(msg.getNotifier(), null);
+            }
+        }
+    }
+
+    @Override
+    protected void update() {
+        fPropertiesElement = (IProperties)getFirstSelectedObject();
+        
         fTableViewer.setInput(fPropertiesElement);
+        
+        // Update kludge
+        ((UpdatingTableColumnLayout)fTableViewer.getTable().getParent().getLayout()).doRelayout();
     }
 
     @Override
-    protected Adapter getECoreAdapter() {
-        return eAdapter;
-    }
-
-    @Override
-    protected EObject getEObject() {
-        return fPropertiesElement;
+    protected IObjectFilter getFilter() {
+        return new Filter();
     }
     
     /**
@@ -195,11 +195,8 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
      * @return 
      */
     protected IArchimateModel getArchimateModel() {
-        if(fPropertiesElement instanceof IArchimateModelElement) {
-            return ((IArchimateModelElement)fPropertiesElement).getArchimateModel();
-        }
-        if(fPropertiesElement instanceof IDiagramModelComponent) {
-            return ((IDiagramModelComponent)fPropertiesElement).getDiagramModel().getArchimateModel();
+        if(fPropertiesElement instanceof IArchimateModelObject) {
+            return ((IArchimateModelObject)fPropertiesElement).getArchimateModel();
         }
         return null;
     }
@@ -214,9 +211,28 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
         Composite tableComp = createTableComposite(parent, SWT.NULL);
         TableColumnLayout tableLayout = (TableColumnLayout)tableComp.getLayout();
         
+        parent.setBackgroundMode(SWT.INHERIT_DEFAULT);
+        
         // Table Viewer
         fTableViewer = new TableViewer(tableComp, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION);
 
+        // Font
+        UIUtils.setFontFromPreferences(fTableViewer.getTable(), IPreferenceConstants.PROPERTIES_TABLE_FONT, true);
+        
+        // Edit cell on double-click and add Tab key traversal
+        TableViewerEditor.create(fTableViewer, new ColumnViewerEditorActivationStrategy(fTableViewer) {
+            @Override
+            protected boolean isEditorActivationEvent(ColumnViewerEditorActivationEvent event) {
+                return super.isEditorActivationEvent(event) ||
+                      (event.eventType == ColumnViewerEditorActivationEvent.MOUSE_DOUBLE_CLICK_SELECTION);
+            }
+            
+        }, ColumnViewerEditor.TABBING_HORIZONTAL | 
+                ColumnViewerEditor.TABBING_MOVE_TO_ROW_NEIGHBOR | 
+                ColumnViewerEditor.TABBING_VERTICAL |
+                ColumnViewerEditor.KEEP_EDITOR_ON_DOUBLE_CLICK |
+                ColumnViewerEditor.KEYBOARD_ACTIVATION);
+        
         fTableViewer.getTable().setHeaderVisible(true);
         fTableViewer.getTable().setLinesVisible(true);
 
@@ -228,7 +244,7 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
 
         // Columns
         TableViewerColumn columnBlank = new TableViewerColumn(fTableViewer, SWT.NONE, 0);
-        tableLayout.setColumnData(columnBlank.getColumn(), new ColumnPixelData(24, false));
+        tableLayout.setColumnData(columnBlank.getColumn(), new ColumnWeightData(3, false));
 
         TableViewerColumn columnKey = new TableViewerColumn(fTableViewer, SWT.NONE, 1);
         columnKey.getColumn().setText(Messages.UserPropertiesSection_0);
@@ -245,17 +261,20 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
 
         TableViewerColumn columnValue = new TableViewerColumn(fTableViewer, SWT.NONE, 2);
         columnValue.getColumn().setText(Messages.UserPropertiesSection_1);
-        tableLayout.setColumnData(columnValue.getColumn(), new ColumnWeightData(80, true));
+        tableLayout.setColumnData(columnValue.getColumn(), new ColumnWeightData(77, true));
         columnValue.setEditingSupport(new ValueEditingSupport(fTableViewer));
 
         // Content Provider
         fTableViewer.setContentProvider(new IStructuredContentProvider() {
+            @Override
             public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
             }
 
+            @Override
             public void dispose() {
             }
 
+            @Override
             public Object[] getElements(Object inputElement) {
                 return ((IProperties)inputElement).getProperties().toArray();
             }
@@ -263,6 +282,9 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
 
         // Label Provider
         fTableViewer.setLabelProvider(new LabelCellProvider());
+        
+        // Enable tooltips
+        ColumnViewerToolTipSupport.enableFor(fTableViewer);
 
         // Toolbar
         ToolBar toolBar = new ToolBar(parent, SWT.FLAT | SWT.VERTICAL);
@@ -274,14 +296,15 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
         fActionNewProperty = new Action(Messages.UserPropertiesSection_2) {
             @Override
             public void run() {
-                if(isAlive()) {
+                if(isAlive(fPropertiesElement)) {
+                    fTableViewer.applyEditorValue(); // complete any current editing
                     int index = -1;
                     IProperty selected = (IProperty)((IStructuredSelection)fTableViewer.getSelection()).getFirstElement();
                     if(selected != null) {
                         index = fPropertiesElement.getProperties().indexOf(selected) + 1;
                     }
                     IProperty property = IArchimateFactory.eINSTANCE.createProperty();
-                    getCommandStack().execute(new NewPropertyCommand(fPropertiesElement.getProperties(), property, index));
+                    executeCommand(new NewPropertyCommand(fPropertiesElement.getProperties(), property, index));
                     fTableViewer.editElement(property, 1);
                 }
             }
@@ -293,7 +316,7 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
 
             @Override
             public ImageDescriptor getImageDescriptor() {
-                return IArchimateImages.ImageFactory.getImageDescriptor(IArchimateImages.ICON_PLUS);
+                return IArchiImages.ImageFactory.getImageDescriptor(IArchiImages.ICON_PLUS);
             }
         };
 
@@ -301,10 +324,10 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
         fActionNewMultipleProperty = new Action(Messages.UserPropertiesSection_3) {
             @Override
             public void run() {
-                if(isAlive()) {
+                if(isAlive(fPropertiesElement)) {
                     MultipleAddDialog dialog = new MultipleAddDialog(fPage.getSite().getShell());
                     if(dialog.open() == Window.OK) {
-                        getCommandStack().execute(dialog.getCommand());
+                        executeCommand(dialog.getCommand());
                     }
                 }
             }
@@ -316,7 +339,7 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
 
             @Override
             public ImageDescriptor getImageDescriptor() {
-                return IArchimateImages.ImageFactory.getImageDescriptor(IArchimateImages.ICON_MUTIPLE);
+                return IArchiImages.ImageFactory.getImageDescriptor(IArchiImages.ICON_MUTIPLE);
             }
         };
 
@@ -324,7 +347,7 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
         fActionRemoveProperty = new Action(Messages.UserPropertiesSection_4) {
             @Override
             public void run() {
-                if(isAlive()) {
+                if(isAlive(fPropertiesElement)) {
                     CompoundCommand compoundCmd = new EObjectNonNotifyingCompoundCommand(fPropertiesElement) {
                         @Override
                         public String getLabel() {
@@ -335,7 +358,7 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
                         Command cmd = new RemovePropertyCommand(fPropertiesElement.getProperties(), (IProperty)o);
                         compoundCmd.add(cmd);
                     }
-                    getCommandStack().execute(compoundCmd);
+                    executeCommand(compoundCmd);
                 }
             }
 
@@ -346,7 +369,7 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
 
             @Override
             public ImageDescriptor getImageDescriptor() {
-                return IArchimateImages.ImageFactory.getImageDescriptor(IArchimateImages.ICON_SMALL_X);
+                return IArchiImages.ImageFactory.getImageDescriptor(IArchiImages.ICON_SMALL_X);
             }
         };
         fActionRemoveProperty.setEnabled(false);
@@ -355,7 +378,7 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
         fActionShowKeyEditor = new Action(Messages.UserPropertiesSection_7) {
             @Override
             public void run() {
-                if(isAlive()) {
+                if(isAlive(fPropertiesElement)) {
                     UserPropertiesManagerDialog dialog = new UserPropertiesManagerDialog(fPage.getSite().getShell(),
                             getArchimateModel());
                     dialog.open();
@@ -369,7 +392,7 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
 
             @Override
             public ImageDescriptor getImageDescriptor() {
-                return IArchimateImages.ImageFactory.getImageDescriptor(IArchimateImages.ICON_COG);
+                return IArchiImages.ImageFactory.getImageDescriptor(IArchiImages.ICON_COG);
             }
         };
 
@@ -390,20 +413,23 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
         });
 
         /*
-         * Table Double-click on cell
+         * Table Double-click
          */
         fTableViewer.getTable().addListener(SWT.MouseDoubleClick, new Listener() {
             @Override
             public void handleEvent(Event event) {
                 // Get Table item
-                TableItem item = fTableViewer.getTable().getItem(new Point(event.x, event.y));
+                Point pt = new Point(event.x, event.y);
+                TableItem item = fTableViewer.getTable().getItem(pt);
+                
                 // Double-click into empty table creates new Property
                 if(item == null) {
                     fActionNewProperty.run();                    
                 }
-                // Handle selected item property double-clicked
-                else {
-                    if(item.getData() instanceof IProperty) {
+                // Double-clicked in column 0 with item
+                else if(item.getData() instanceof IProperty) {
+                    Rectangle rect = item.getBounds(0);
+                    if(rect.contains(pt)) {
                         handleDoubleClick((IProperty)item.getData());
                     }
                 }
@@ -421,6 +447,7 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
         menuMgr.setRemoveAllWhenShown(true);
 
         menuMgr.addMenuListener(new IMenuListener() {
+            @Override
             public void menuAboutToShow(IMenuManager manager) {
                 fillContextMenu(manager);
             }
@@ -443,8 +470,8 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
      * Sort Keys
      */
     private void sortKeys() {
-        if(isAlive()) {
-            getCommandStack().execute(new SortPropertiesCommand(fPropertiesElement.getProperties()));
+        if(isAlive(fPropertiesElement)) {
+            executeCommand(new SortPropertiesCommand(fPropertiesElement.getProperties()));
         }
     }
 
@@ -455,7 +482,12 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
         Matcher matcher = HTMLUtils.HTML_LINK_PATTERN.matcher(selected.getValue());
         if(matcher.find()) {
             String href = matcher.group();
-            HTMLUtils.openLinkInBrowser(href);
+            try {
+                HTMLUtils.openLinkInBrowser(href);
+            }
+            catch(PartInitException | MalformedURLException ex) {
+                ex.printStackTrace();
+            }
         }
     }
 
@@ -465,19 +497,19 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
     private String[] getAllUniquePropertyKeysForModel() {
         IArchimateModel model = getArchimateModel();
 
-        List<String> list = new ArrayList<String>();
+        Set<String> set = new HashSet<String>();
 
         for(Iterator<EObject> iter = model.eAllContents(); iter.hasNext();) {
             EObject element = iter.next();
             if(element instanceof IProperty) {
                 String key = ((IProperty)element).getKey();
-                if(StringUtils.isSetAfterTrim(key) && !list.contains(key)) {
-                    list.add(key);
+                if(StringUtils.isSetAfterTrim(key)) {
+                    set.add(key);
                 }
             }
         }
 
-        String[] items = list.toArray(new String[list.size()]);
+        String[] items = set.toArray(new String[set.size()]);
         Arrays.sort(items, new Comparator<String>() {
             @Override
             public int compare(String s1, String s2) {
@@ -503,11 +535,13 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
         int operations = DND.DROP_MOVE;
         Transfer[] transferTypes = new Transfer[] { LocalSelectionTransfer.getTransfer() };
         fTableViewer.addDragSupport(operations, transferTypes, new DragSourceListener() {
+            @Override
             public void dragFinished(DragSourceEvent event) {
                 LocalSelectionTransfer.getTransfer().setSelection(null);
                 fDragSourceValid = false;
             }
 
+            @Override
             public void dragSetData(DragSourceEvent event) {
                 // For consistency set the data to the selection even though
                 // the selection is provided by the LocalSelectionTransfer
@@ -515,14 +549,14 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
                 event.data = LocalSelectionTransfer.getTransfer().getSelection();
             }
 
+            @Override
             public void dragStart(DragSourceEvent event) {
-                if(!isAlive()) {
-                    return;
+                if(isAlive(fPropertiesElement)) {
+                    IStructuredSelection selection = (IStructuredSelection)fTableViewer.getSelection();
+                    LocalSelectionTransfer.getTransfer().setSelection(selection);
+                    event.doit = true;
+                    fDragSourceValid = true;
                 }
-                IStructuredSelection selection = (IStructuredSelection)fTableViewer.getSelection();
-                LocalSelectionTransfer.getTransfer().setSelection(selection);
-                event.doit = true;
-                fDragSourceValid = true;
             }
         });
     }
@@ -531,16 +565,20 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
         int operations = DND.DROP_MOVE;
         Transfer[] transferTypes = new Transfer[] { LocalSelectionTransfer.getTransfer() };
         fTableViewer.addDropSupport(operations, transferTypes, new DropTargetListener() {
+            @Override
             public void dragEnter(DropTargetEvent event) {
             }
 
+            @Override
             public void dragLeave(DropTargetEvent event) {
             }
 
+            @Override
             public void dragOperationChanged(DropTargetEvent event) {
                 event.detail = getEventDetail(event);
             }
 
+            @Override
             public void dragOver(DropTargetEvent event) {
                 event.detail = getEventDetail(event);
 
@@ -554,11 +592,14 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
                 event.feedback |= DND.FEEDBACK_SCROLL;
             }
 
+            @Override
             public void drop(DropTargetEvent event) {
                 doDropOperation(event);
             }
 
+            @Override
             public void dropAccept(DropTargetEvent event) {
+                event.detail = getEventDetail(event); // double-check this
             }
 
             private int getEventDetail(DropTargetEvent event) {
@@ -624,7 +665,7 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
             index++;
         }
 
-        getCommandStack().execute(compoundCmd.unwrap());
+        executeCommand(compoundCmd.unwrap());
     }
 
     private int getDropTargetPosition(DropTargetEvent event) {
@@ -682,12 +723,23 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
     /**
      * Label Provider
      */
-    private static class LabelCellProvider extends LabelProvider implements ITableLabelProvider, ITableColorProvider {
+    private static class LabelCellProvider extends CellLabelProvider {
+
+        @Override
+        public void update(ViewerCell cell) {
+            cell.setText(getColumnText(cell.getElement(), cell.getColumnIndex()));
+            cell.setForeground(getForeground(cell.getElement(), cell.getColumnIndex()));
+            cell.setImage(getColumnImage(cell.getElement(), cell.getColumnIndex()));
+        }
+        
         public Image getColumnImage(Object element, int columnIndex) {
+            if(columnIndex == 0) {
+                return isLink(element) ? IArchiImages.ImageFactory.getImage(IArchiImages.ICON_BROWSER) : null;
+            }
+            
             return null;
         }
 
-        @Override
         public String getColumnText(Object element, int columnIndex) {
             switch(columnIndex) {
                 case 1:
@@ -705,18 +757,21 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
             }
         }
 
-        @Override
         public Color getForeground(Object element, int columnIndex) {
             if(columnIndex == 2) {
-                Matcher matcher = HTMLUtils.HTML_LINK_PATTERN.matcher(((IProperty)element).getValue());
-                return matcher.find() ? ColorConstants.blue : null;
+                return isLink(element) ? ColorConstants.blue : null;
             }
             return null;
         }
 
         @Override
-        public Color getBackground(Object element, int columnIndex) {
-            return null;
+        public String getToolTipText(Object element) {
+            return isLink(element) ? Messages.UserPropertiesSection_21 : null;
+        }
+        
+        private boolean isLink(Object element) {
+            Matcher matcher = HTMLUtils.HTML_LINK_PATTERN.matcher(((IProperty)element).getValue());
+            return matcher.find();
         }
     }
 
@@ -738,7 +793,7 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
         protected CellEditor getCellEditor(Object element) {
             String[] items = new String[0];
 
-            if(isAlive()) {
+            if(isAlive(fPropertiesElement)) {
                 items = getAllUniquePropertyKeysForModel();
             }
 
@@ -758,8 +813,8 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
 
         @Override
         protected void setValue(Object element, Object value) {
-            if(isAlive()) {
-                getCommandStack().execute(new EObjectFeatureCommand(Messages.UserPropertiesSection_10, (IProperty)element,
+            if(isAlive(fPropertiesElement)) {
+                executeCommand(new EObjectFeatureCommand(Messages.UserPropertiesSection_10, (IProperty)element,
                                             IArchimatePackage.Literals.PROPERTY__KEY, value));
             }
         }
@@ -796,8 +851,8 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
 
         @Override
         protected void setValue(Object element, Object value) {
-            if(isAlive()) {
-                getCommandStack().execute(new EObjectFeatureCommand(Messages.UserPropertiesSection_11, (IProperty)element,
+            if(isAlive(fPropertiesElement)) {
+                executeCommand(new EObjectFeatureCommand(Messages.UserPropertiesSection_11, (IProperty)element,
                                         IArchimatePackage.Literals.PROPERTY__VALUE, value));
             }
         }
@@ -809,19 +864,27 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
      */
     private void hookCellEditorGlobalActionHandler(CellEditor cellEditor) {
         Listener listener = new Listener() {
-            CellEditorGlobalActionHandler globalActionHandler;
+            // We have to disable the action handlers of the the active Editor/View site *and* the Properties View Site
+            GlobalActionDisablementHandler propertiesViewGlobalActionHandler, globalActionHandler;
             
             @Override
             public void handleEvent(Event event) {
                 switch(event.type) {
                     case SWT.Activate:
-                        globalActionHandler = new CellEditorGlobalActionHandler();
-                        globalActionHandler.clearGlobalActions();
+                        // The Properties View site action bars
+                        IActionBars actionBars = fPage.getSite().getActionBars();
+                        propertiesViewGlobalActionHandler = new GlobalActionDisablementHandler(actionBars);
+                        propertiesViewGlobalActionHandler.clearGlobalActions();
+                        
+                        // The active View or Editor site's action bars also have to be updated
+                        globalActionHandler = new GlobalActionDisablementHandler();
+                        globalActionHandler.update();
                         break;
 
                     case SWT.Deactivate:
-                        if(globalActionHandler != null) {
-                            globalActionHandler.restoreGlobalActions();
+                        if(propertiesViewGlobalActionHandler != null) {
+                            propertiesViewGlobalActionHandler.restoreGlobalActions();
+                            globalActionHandler.update();
                         }
                         break;
 
@@ -1022,7 +1085,7 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
 
         public MultipleAddDialog(Shell parentShell) {
             super(parentShell, "ArchimatePropertiesMultipleAddDialog"); //$NON-NLS-1$
-            setTitleImage(IArchimateImages.ImageFactory.getImage(IArchimateImages.ECLIPSE_IMAGE_IMPORT_PREF_WIZARD));
+            setTitleImage(IArchiImages.ImageFactory.getImage(IArchiImages.ECLIPSE_IMAGE_IMPORT_PREF_WIZARD));
             setShellStyle(getShellStyle() | SWT.RESIZE);
 
             keys = getAllUniquePropertyKeysForModel();
@@ -1075,10 +1138,10 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
             Table table = new Table(tableComp, SWT.MULTI | SWT.FULL_SELECTION | SWT.CHECK);
             tableViewer = new CheckboxTableViewer(table);
             tableViewer.getControl().setLayoutData(new GridData(GridData.FILL_BOTH));
-
+            
             tableViewer.getTable().setLinesVisible(true);
 
-            tableViewer.setSorter(new ViewerSorter());
+            tableViewer.setComparator(new ViewerComparator());
 
             // Column
             TableViewerColumn columnKey = new TableViewerColumn(tableViewer, SWT.NONE, 0);
@@ -1086,12 +1149,15 @@ public class UserPropertiesSection extends AbstractArchimatePropertySection {
 
             // Content Provider
             tableViewer.setContentProvider(new IStructuredContentProvider() {
+                @Override
                 public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
                 }
 
+                @Override
                 public void dispose() {
                 }
 
+                @Override
                 public Object[] getElements(Object inputElement) {
                     return keys;
                 }

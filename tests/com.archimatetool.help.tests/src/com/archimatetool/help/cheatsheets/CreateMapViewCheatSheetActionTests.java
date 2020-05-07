@@ -12,8 +12,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 
-import junit.framework.JUnit4TestAdapter;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -23,6 +21,8 @@ import com.archimatetool.model.IDiagramModelObject;
 import com.archimatetool.model.IDiagramModelReference;
 import com.archimatetool.testingtools.ArchimateTestModel;
 import com.archimatetool.tests.TestData;
+
+import junit.framework.JUnit4TestAdapter;
 
 
 public class CreateMapViewCheatSheetActionTests {

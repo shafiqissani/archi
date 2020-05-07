@@ -9,91 +9,124 @@ package com.archimatetool.editor.preferences;
 
 
 /**
- * Constant definitions for plug-in preferences
+ * Constant definitions for main preferences
  * 
  * @author Phillip Beauvoir
  */
+@SuppressWarnings("nls")
 public interface IPreferenceConstants {
-    String USER_DATA_FOLDER = "userDataFolder"; //$NON-NLS-1$
     
-    String MRU_MAX = "mruMax"; //$NON-NLS-1$
+    // ======================================= Colours & Fonts =======================================
     
-    String GRID_SIZE = "gridSize"; //$NON-NLS-1$
-    String GRID_VISIBLE = "gridVisible"; //$NON-NLS-1$
-    String GRID_SNAP = "gridSnap"; //$NON-NLS-1$
-    String GRID_SHOW_GUIDELINES = "gridShowGuidelines"; //$NON-NLS-1$
+    // Colours
     
-    String VIEW_TOOLTIPS = "viewTooltips"; //$NON-NLS-1$
-    
-    String OPEN_DIAGRAMS_ON_LOAD = "openDiagramsOnLoad"; //$NON-NLS-1$
-    String BACKUP_ON_SAVE = "backupOnSave"; //$NON-NLS-1$
-    
-    String ANIMATE = "animate"; //$NON-NLS-1$
-    String ANIMATION_SPEED = "animationSpeed"; //$NON-NLS-1$
-    String ANTI_ALIAS = "antiAlias"; //$NON-NLS-1$
-    
-    String DEFAULT_VIEW_FONT = "defaultViewFont"; //$NON-NLS-1$
-    
-    String LINK_VIEW = "linkView"; //$NON-NLS-1$
-    
-    String BUSINESS_INTERFACE_FIGURE = "businessInterfaceFigure"; //$NON-NLS-1$
-    String BUSINESS_PROCESS_FIGURE = "businessProcessFigure"; //$NON-NLS-1$
-    String BUSINESS_SERVICE_FIGURE = "businessServiceFigure"; //$NON-NLS-1$
-    String APPLICATION_COMPONENT_FIGURE = "applicationComponentFigure"; //$NON-NLS-1$
-    String APPLICATION_INTERFACE_FIGURE = "applicationInterfaceFigure"; //$NON-NLS-1$
-    String APPLICATION_SERVICE_FIGURE = "applicationServiceFigure"; //$NON-NLS-1$
-    String TECHNOLOGY_NODE_FIGURE = "technologyNodeFigure"; //$NON-NLS-1$
-    String TECHNOLOGY_DEVICE_FIGURE = "technologyDeviceFigure"; //$NON-NLS-1$
-    String TECHNOLOGY_INTERFACE_FIGURE = "technologyInterfaceFigure"; //$NON-NLS-1$
-    String TECHNOLOGY_SERVICE_FIGURE = "technologyServiceFigure"; //$NON-NLS-1$
-    
-    String SKETCH_DEFAULT_BACKGROUND = "sketchDefaultBackground"; //$NON-NLS-1$
-    
-    String PALETTE_STATE = "palette_state"; //$NON-NLS-1$
+    String DEFAULT_CONNECTION_LINE_COLOR = "defaultConnectionLineColor";
+    String DEFAULT_ELEMENT_LINE_COLOR = "defaultElementLineColor";
+    String DEFAULT_FILL_COLOR_PREFIX = "defaultFillColour_";
+    String FOLDER_COLOUR_PREFIX = "folderColour_";
 
-    String ANIMATE_MAGIC_CONNECTOR = "animateMagicConnector"; //$NON-NLS-1$
-    String MAGIC_CONNECTOR_POLARITY = "polarityMagicConnector"; //$NON-NLS-1$
+    String DERIVE_ELEMENT_LINE_COLOR = "deriveElementLineColor";
+    String DERIVE_ELEMENT_LINE_COLOR_FACTOR = "deriveElementLineColorFactor";
+    String SAVE_USER_DEFAULT_COLOR = "saveUserDefaultFillColorInFile";
     
-    String ALLOW_CIRCULAR_CONNECTIONS = "circularConnections"; //$NON-NLS-1$
+    // Fonts
     
-    String USE_NESTED_CONNECTIONS = "useNestedConnections"; //$NON-NLS-1$
-    String CREATE_RELATION_WHEN_ADDING_NEW_ELEMENT_TO_CONTAINER = "createRelationWhenAddingNewElementToContainer"; //$NON-NLS-1$
-    String CREATE_RELATION_WHEN_ADDING_MODEL_TREE_ELEMENT_TO_CONTAINER = "createRelationWhenAddingModelTreeElementToContainer"; //$NON-NLS-1$
-    String CREATE_RELATION_WHEN_MOVING_ELEMENT_TO_CONTAINER = "createRelationWhenMovingElementToContainer"; //$NON-NLS-1$
+    String ANALYSIS_TABLE_FONT = "analysisTableFont";
+    String DEFAULT_VIEW_FONT = "defaultViewFont";
+    String MODEL_TREE_FONT = "modelTreeFont";
+    String MULTI_LINE_TEXT_FONT = "multiLineTextFont";
+    String NAVIGATOR_TREE_FONT = "navigatorTreeFont";
+    String PROPERTIES_TABLE_FONT = "propertiesTableFont";
+    String SINGLE_LINE_TEXT_FONT = "singleLineTextFont";
     
-    String NEW_RELATIONS_TYPES = "newRelationsTypes"; //$NON-NLS-1$
-    String HIDDEN_RELATIONS_TYPES = "hiddenRelationsTypes"; //$NON-NLS-1$
     
-    String VIEWPOINTS_FILTER_MODEL_TREE = "viewpointsFilterModelTree"; //$NON-NLS-1$
-    String VIEWPOINTS_HIDE_DIAGRAM_ELEMENTS = "viewpointsHideDiagramElements"; //$NON-NLS-1$
-    String VIEWPOINTS_HIDE_PALETTE_ELEMENTS = "viewpointsHidePaletteElements"; //$NON-NLS-1$
-    String VIEWPOINTS_HIDE_MAGIC_CONNECTOR_ELEMENTS = "viewpointsHideMagicConnectorElements"; //$NON-NLS-1$
+    // ======================================= Connections =======================================
+    
+    // Connections
+    
+    String ANTI_ALIAS = "antiAlias";
+    String MAGIC_CONNECTOR_POLARITY = "polarityMagicConnector";
+    String USE_ORTHOGONAL_ANCHOR = "orthogonalAnchor";
+    String USE_LINE_CURVES = "lineCurves";
+    String USE_LINE_JUMPS = "lineJumps";
+    
+    String CONNECTION_LABEL_STRATEGY = "connectionLabelStrategy";
 
-    String EDIT_NAME_ON_NEW_OBJECT = "editNameOnNewObject"; //$NON-NLS-1$
-    
-    String DEFAULT_FILL_COLOR_PREFIX = "defaultFillColour_"; //$NON-NLS-1$
-    String SAVE_USER_DEFAULT_COLOR = "saveUserDefaultFillColorInFile"; //$NON-NLS-1$
-    String DERIVE_ELEMENT_LINE_COLOR = "deriveElementLineColor"; //$NON-NLS-1$
-    String DERIVE_ELEMENT_LINE_COLOR_FACTOR = "deriveElementLineColorFactor"; //$NON-NLS-1$
-    String SHOW_FILL_COLORS_IN_GUI = "showFillColorsInGui"; //$NON-NLS-1$
-    
-    String DEFAULT_ELEMENT_LINE_COLOR = "defaultElementLineColor"; //$NON-NLS-1$
-    String DEFAULT_CONNECTION_LINE_COLOR = "defaultConnectionLineColor"; //$NON-NLS-1$
+    String SHOW_WARNING_ON_RECONNECT = "showWarningOnReconnect";
 
-    String USE_ORTHOGONAL_ANCHOR = "orthogonalAnchor"; //$NON-NLS-1$
-    String USE_LINE_CURVES = "lineCurves"; //$NON-NLS-1$
-    String USE_LINE_JUMPS = "lineJumps"; //$NON-NLS-1$
+    // ARM
     
-    String ANIMATE_VISUALISER_NODES = "animateVisualiserNodes"; //$NON-NLS-1$
+    String CREATE_RELATION_WHEN_ADDING_NEW_ELEMENT_TO_CONTAINER = "createRelationWhenAddingNewElementToContainer";
+    String CREATE_RELATION_WHEN_ADDING_MODEL_TREE_ELEMENT_TO_CONTAINER = "createRelationWhenAddingModelTreeElementToContainer";
+    String CREATE_RELATION_WHEN_MOVING_ELEMENT_TO_CONTAINER = "createRelationWhenMovingElementToContainer";
+
+    String HIDDEN_RELATIONS_TYPES = "hiddenRelationsTypes";
+    String USE_NESTED_CONNECTIONS = "useNestedConnections";
+
+    String NEW_RELATIONS_TYPES = "newRelationsTypes";
+    String NEW_REVERSE_RELATIONS_TYPES = "newReverseRelationsTypes";
+
     
-    String SHOW_SHADOWS = "showShadows"; //$NON-NLS-1$
+    // ======================================= Diagram =======================================
     
-    String ARCHIMATE_FIGURE_WORD_WRAP_STYLE = "archimateFigureWordWrapStyle"; //$NON-NLS-1$
+    // General
     
-    String SHOW_STATUS_LINE = "showStatusLine"; //$NON-NLS-1$
+    String GRID_SIZE = "gridSize";
+
+    String EDIT_NAME_ON_NEW_OBJECT = "editNameOnNewObject";
+    String PALETTE_STATE = "palette_state";
+    String VIEW_TOOLTIPS = "viewTooltips";
     
-    String DEFAULT_ARCHIMATE_FIGURE_WIDTH = "defaultArchiMateFigureWidth"; //$NON-NLS-1$
-    String DEFAULT_ARCHIMATE_FIGURE_HEIGHT = "defaultArchiMateFigureHeight"; //$NON-NLS-1$
+    String DIAGRAM_OBJECT_RESIZE_BEHAVIOUR = "resizeBehaviour"; 
+    String DIAGRAM_PASTE_SPECIAL_BEHAVIOR = "pasteSpecialBehavior";
+   
+    String VIEWPOINTS_FILTER_MODEL_TREE = "viewpointsFilterModelTree";
+    String VIEWPOINTS_GHOST_DIAGRAM_ELEMENTS = "viewpointsGhostDiagramElements";
+    String VIEWPOINTS_HIDE_PALETTE_ELEMENTS = "viewpointsHidePaletteElements";
+    String VIEWPOINTS_HIDE_MAGIC_CONNECTOR_ELEMENTS = "viewpointsHideMagicConnectorElements";
+
+    // Appearance
     
-    String HIGHLIGHT_UNUSED_ELEMENTS_IN_MODEL_TREE = "highlightUnusedElementsInModelTree"; //$NON-NLS-1$
+    String DEFAULT_ARCHIMATE_FIGURE_WIDTH = "defaultArchiMateFigureWidth";
+    String DEFAULT_ARCHIMATE_FIGURE_HEIGHT = "defaultArchiMateFigureHeight";
+    
+    String DEFAULT_ARCHIMATE_FIGURE_TEXT_ALIGNMENT = "defaultArchiMateTextAlignment";
+    String DEFAULT_ARCHIMATE_FIGURE_TEXT_POSITION = "defaultArchiMateTextPosition";
+    
+    String ARCHIMATE_FIGURE_WORD_WRAP_STYLE = "archimateFigureWordWrapStyle";
+    String DEFAULT_GRADIENT = "defaultGradient";
+    String SKETCH_DEFAULT_BACKGROUND = "sketchDefaultBackground";
+    
+    // Default Figures
+
+    String DEFAULT_FIGURE_PREFIX = "defaultFigure"; 
+    
+    
+    // ======================================= General =======================================
+    
+    String BACKUP_ON_SAVE = "backupOnSave";
+    String HIGHLIGHT_UNUSED_ELEMENTS_IN_MODEL_TREE = "highlightUnusedElementsInModelTree";
+    String OPEN_DIAGRAMS_ON_LOAD = "openDiagramsOnLoad";
+    String SCALE_IMAGE_EXPORT = "scaleImageExport";
+    String SHOW_WARNING_ON_DELETE_FROM_TREE = "showWarningOnDeleteFromTree";
+    String SHOW_STATUS_LINE = "showStatusLine";
+    String TREE_SEARCH_AUTO = "treeSearchAuto";
+    String THEME_AUTO = "themeAuto";
+    
+    
+    // ======================================= Internal =======================================
+    
+    String GRID_VISIBLE = "gridVisible";
+    String GRID_SNAP = "gridSnap";
+    String GRID_SHOW_GUIDELINES = "gridShowGuidelines";
+
+    String LINK_VIEW = "linkView";
+    String MRU_MAX = "mruMax";
+
+    String USER_DATA_FOLDER = "userDataFolder";
+    
+    // Check for Archi update
+    String DOWNLOAD_URL = "downloadURL";
+    String UPDATE_URL = "updateURL";
+    
 }

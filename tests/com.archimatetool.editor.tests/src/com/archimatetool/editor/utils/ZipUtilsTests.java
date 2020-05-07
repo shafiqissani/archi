@@ -150,7 +150,9 @@ public class ZipUtilsTests {
         ZipUtils.unpackZip(tmpZipFile, tmpOutFolder);
         File outFile = new File(tmpOutFolder, "img.png");
         assertTrue(outFile.exists());
-        assertEquals(77, outFile.length());
+
+        // Linux has a different size than Windows or Mac because GTK image loading is different
+        assertEquals(PlatformUtils.isGTK() ? 102 : 77, outFile.length());
     }
     
     @Test
@@ -251,4 +253,27 @@ public class ZipUtilsTests {
         ZipUtils.unpackZip(new File("bogus_file.zip"), TestUtils.createTempFolder("ziptest"));
     }
 
+    /**
+     * Test for cases where a zip entry has "../../file" which would unpack and possibly over-write a file
+     * in a parent folder.
+     */
+    @Test (expected=IOException.class)
+    public void testUnpackZipFileTriesToUnzipInParentRelativeFolder() throws Exception {
+        // Create a Zip file
+        File tmpZipFile = TestUtils.createTempFile(".zip");
+        
+        // Add afile
+        File srcFile = new File(TestSupport.getTestDataFolder(), "filetest/readme.txt");
+        BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(tmpZipFile));
+        ZipOutputStream zOut = new ZipOutputStream(out);
+        
+        // But add it with a malicious path
+        ZipUtils.addFileToZip(srcFile, "../../" + srcFile.getName(), zOut);
+        zOut.flush();
+        zOut.close();
+
+        // Now unpack it and expect an exception
+        File folderTemp = new File(TestUtils.getMainTempFolder(), "ziptest");
+        ZipUtils.unpackZip(tmpZipFile, folderTemp);
+    }
 }

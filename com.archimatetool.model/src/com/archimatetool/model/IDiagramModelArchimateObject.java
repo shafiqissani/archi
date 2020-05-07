@@ -13,17 +13,17 @@ package com.archimatetool.model;
  *
  * <p>
  * The following features are supported:
+ * </p>
  * <ul>
  *   <li>{@link com.archimatetool.model.IDiagramModelArchimateObject#getArchimateElement <em>Archimate Element</em>}</li>
  *   <li>{@link com.archimatetool.model.IDiagramModelArchimateObject#getType <em>Type</em>}</li>
  * </ul>
- * </p>
  *
  * @see com.archimatetool.model.IArchimatePackage#getDiagramModelArchimateObject()
  * @model extendedMetaData="name='DiagramObject'"
  * @generated
  */
-public interface IDiagramModelArchimateObject extends IDiagramModelObject, IDiagramModelContainer {
+public interface IDiagramModelArchimateObject extends IDiagramModelObject, IDiagramModelContainer, IDiagramModelArchimateComponent, ITextPosition {
     /**
      * Returns the value of the '<em><b>Archimate Element</b></em>' reference.
      * <!-- begin-user-doc -->
@@ -78,19 +78,9 @@ public interface IDiagramModelArchimateObject extends IDiagramModelObject, IDiag
     void setType(int value);
 
     /**
-     * <!-- begin-user-doc -->
-     * <!-- end-user-doc -->
-     * @model
-     * @generated
+     * Over-ride to return correct type
      */
-    void addArchimateElementToModel(IFolder parent);
-
-    /**
-     * <!-- begin-user-doc -->
-     * <!-- end-user-doc -->
-     * @model
-     * @generated
-     */
-    void removeArchimateElementFromModel();
-
+    @Override
+    IArchimateElement getArchimateConcept();
+    
 } // IDiagramModelArchimateObject

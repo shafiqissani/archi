@@ -47,21 +47,13 @@ public class Messages extends NLS {
 
     public static String ColoursFontsPreferencePage_24;
 
-    public static String ColoursFontsPreferencePage_25;
-
-    public static String ColoursFontsPreferencePage_26;
-
-    public static String ColoursFontsPreferencePage_27;
-
-    public static String ColoursFontsPreferencePage_28;
-
-    public static String ColoursFontsPreferencePage_29;
-
     public static String ColoursFontsPreferencePage_3;
 
-    public static String ColoursFontsPreferencePage_30;
+    public static String ColoursFontsPreferencePage_32;
 
-    public static String ColoursFontsPreferencePage_31;
+    public static String ColoursFontsPreferencePage_33;
+
+    public static String ColoursFontsPreferencePage_34;
 
     public static String ColoursFontsPreferencePage_4;
 
@@ -101,6 +93,18 @@ public class Messages extends NLS {
 
     public static String ConnectionsPreferencePage_2;
 
+    public static String ConnectionsPreferencePage_20;
+
+    public static String ConnectionsPreferencePage_21;
+
+    public static String ConnectionsPreferencePage_22;
+
+    public static String ConnectionsPreferencePage_23;
+
+    public static String ConnectionsPreferencePage_24;
+
+    public static String ConnectionsPreferencePage_25;
+
     public static String ConnectionsPreferencePage_3;
 
     public static String ConnectionsPreferencePage_4;
@@ -119,7 +123,29 @@ public class Messages extends NLS {
 
     public static String DiagramAppearancePreferenceTab_1;
 
+    public static String DiagramAppearancePreferenceTab_10;
+
+    public static String DiagramAppearancePreferenceTab_11;
+
+    public static String DiagramAppearancePreferenceTab_12;
+
+    public static String DiagramAppearancePreferenceTab_13;
+
+    public static String DiagramAppearancePreferenceTab_14;
+
+    public static String DiagramAppearancePreferenceTab_15;
+
+    public static String DiagramAppearancePreferenceTab_16;
+
+    public static String DiagramAppearancePreferenceTab_17;
+
+    public static String DiagramAppearancePreferenceTab_18;
+
+    public static String DiagramAppearancePreferenceTab_19;
+
     public static String DiagramAppearancePreferenceTab_2;
+
+    public static String DiagramAppearancePreferenceTab_20;
 
     public static String DiagramAppearancePreferenceTab_3;
 
@@ -131,35 +157,19 @@ public class Messages extends NLS {
 
     public static String DiagramAppearancePreferenceTab_7;
 
+    public static String DiagramAppearancePreferenceTab_8;
+
+    public static String DiagramAppearancePreferenceTab_9;
+
     public static String DiagramFiguresPreferencePage_0;
 
-    public static String DiagramFiguresPreferencePage_1;
-
-    public static String DiagramFiguresPreferencePage_2;
-
-    public static String DiagramFiguresPreferencePage_3;
-
-    public static String DiagramFiguresPreferencePage_4;
-
-    public static String DiagramFiguresPreferencePage_5;
-
-    public static String DiagramFiguresPreferencePage_6;
-
-    public static String DiagramFiguresPreferencePage_7;
-
-    public static String DiagramFiguresPreferencePage_8;
-
     public static String DiagramFiguresPreferencePage_9;
-
-    public static String DiagramFiguresPreferenceTab_0;
-
-    public static String DiagramFiguresPreferenceTab_1;
-
-    public static String DiagramFiguresPreferenceTab_2;
 
     public static String DiagramPreferencePage_0;
 
     public static String DiagramPreferencePage_1;
+
+    public static String DiagramPreferencePage_10;
 
     public static String DiagramPreferencePage_13;
 
@@ -171,13 +181,17 @@ public class Messages extends NLS {
 
     public static String DiagramPreferencePage_17;
 
-    public static String DiagramPreferencePage_18;
-
     public static String DiagramPreferencePage_19;
 
     public static String DiagramPreferencePage_2;
 
     public static String DiagramPreferencePage_20;
+    
+    public static String DiagramPreferencePage_21;
+    
+    public static String DiagramPreferencePage_22;
+    
+    public static String DiagramPreferencePage_23;
 
     public static String DiagramPreferencePage_24;
 
@@ -195,6 +209,48 @@ public class Messages extends NLS {
 
     public static String DiagramPreferencePage_9;
 
+    public static String FontsPreferenceTab_0;
+
+    public static String FontsPreferenceTab_1;
+
+    public static String FontsPreferenceTab_10;
+
+    public static String FontsPreferenceTab_11;
+
+    public static String FontsPreferenceTab_12;
+
+    public static String FontsPreferenceTab_13;
+
+    public static String FontsPreferenceTab_14;
+
+    public static String FontsPreferenceTab_15;
+
+    public static String FontsPreferenceTab_16;
+
+    public static String FontsPreferenceTab_17;
+
+    public static String FontsPreferenceTab_18;
+
+    public static String FontsPreferenceTab_19;
+
+    public static String FontsPreferenceTab_2;
+
+    public static String FontsPreferenceTab_20;
+
+    public static String FontsPreferenceTab_3;
+
+    public static String FontsPreferenceTab_4;
+
+    public static String FontsPreferenceTab_5;
+    
+    public static String FontsPreferenceTab_6;
+
+    public static String FontsPreferenceTab_7;
+
+    public static String FontsPreferenceTab_8;
+
+    public static String FontsPreferenceTab_9;
+
     public static String GeneralPreferencePage_0;
 
     public static String GeneralPreferencePage_1;
@@ -202,6 +258,16 @@ public class Messages extends NLS {
     public static String GeneralPreferencePage_10;
 
     public static String GeneralPreferencePage_11;
+
+    public static String GeneralPreferencePage_12;
+
+    public static String GeneralPreferencePage_13;
+
+    public static String GeneralPreferencePage_14;
+
+    public static String GeneralPreferencePage_15;
+
+    public static String GeneralPreferencePage_16;
 
     public static String GeneralPreferencePage_2;
 

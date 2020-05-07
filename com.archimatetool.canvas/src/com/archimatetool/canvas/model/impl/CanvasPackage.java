@@ -122,7 +122,7 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
 
     /**
      * Creates, registers, and initializes the <b>Package</b> for this model, and for any others upon which it depends.
-     * 
+     *
      * <p>This method is used to initialize {@link ICanvasPackage#eINSTANCE} when that field is accessed.
      * Clients should not invoke it directly. Instead, they should simply access that field to obtain the package.
      * <!-- begin-user-doc -->
@@ -136,7 +136,8 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
         if (isInited) return (ICanvasPackage)EPackage.Registry.INSTANCE.getEPackage(ICanvasPackage.eNS_URI);
 
         // Obtain or create and register package
-        CanvasPackage theCanvasPackage = (CanvasPackage)(EPackage.Registry.INSTANCE.get(eNS_URI) instanceof CanvasPackage ? EPackage.Registry.INSTANCE.get(eNS_URI) : new CanvasPackage());
+        Object registeredCanvasPackage = EPackage.Registry.INSTANCE.get(eNS_URI);
+        CanvasPackage theCanvasPackage = registeredCanvasPackage instanceof CanvasPackage ? (CanvasPackage)registeredCanvasPackage : new CanvasPackage();
 
         isInited = true;
 
@@ -152,7 +153,6 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
         // Mark meta-data to indicate it can't be changed
         theCanvasPackage.freeze();
 
-  
         // Update the registry and return the package
         EPackage.Registry.INSTANCE.put(ICanvasPackage.eNS_URI, theCanvasPackage);
         return theCanvasPackage;
@@ -163,6 +163,7 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public EClass getIconic() {
         return iconicEClass;
     }
@@ -172,6 +173,7 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public EAttribute getIconic_ImagePosition() {
         return (EAttribute)iconicEClass.getEStructuralFeatures().get(0);
     }
@@ -181,6 +183,7 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public EClass getCanvasModel() {
         return canvasModelEClass;
     }
@@ -190,6 +193,7 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public EClass getCanvasModelSticky() {
         return canvasModelStickyEClass;
     }
@@ -199,6 +203,7 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public EClass getCanvasModelBlock() {
         return canvasModelBlockEClass;
     }
@@ -208,6 +213,7 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public EClass getCanvasModelImage() {
         return canvasModelImageEClass;
     }
@@ -217,6 +223,7 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public EClass getCanvasModelConnection() {
         return canvasModelConnectionEClass;
     }
@@ -226,6 +233,7 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public EClass getHintProvider() {
         return hintProviderEClass;
     }
@@ -235,6 +243,7 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public EAttribute getHintProvider_HintTitle() {
         return (EAttribute)hintProviderEClass.getEStructuralFeatures().get(0);
     }
@@ -244,6 +253,7 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public EAttribute getHintProvider_HintContent() {
         return (EAttribute)hintProviderEClass.getEStructuralFeatures().get(1);
     }
@@ -253,6 +263,7 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public EClass getHelpHintProvider() {
         return helpHintProviderEClass;
     }
@@ -262,6 +273,7 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public EClass getNotesContent() {
         return notesContentEClass;
     }
@@ -271,6 +283,7 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public EAttribute getNotesContent_Notes() {
         return (EAttribute)notesContentEClass.getEStructuralFeatures().get(0);
     }
@@ -280,6 +293,7 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public ICanvasFactory getCanvasFactory() {
         return (ICanvasFactory)getEFactoryInstance();
     }
@@ -421,18 +435,18 @@ public class CanvasPackage extends EPackageImpl implements ICanvasPackage {
      * @generated
      */
     protected void createExtendedMetaDataAnnotations() {
-        String source = "http:///org/eclipse/emf/ecore/util/ExtendedMetaData"; //$NON-NLS-1$	
+        String source = "http:///org/eclipse/emf/ecore/util/ExtendedMetaData"; //$NON-NLS-1$
         addAnnotation
-          (getHintProvider_HintContent(), 
-           source, 
+          (getHintProvider_HintContent(),
+           source,
            new String[] {
-             "kind", "element" //$NON-NLS-1$ //$NON-NLS-2$
-           });	
+               "kind", "element" //$NON-NLS-1$ //$NON-NLS-2$
+           });
         addAnnotation
-          (getNotesContent_Notes(), 
-           source, 
+          (getNotesContent_Notes(),
+           source,
            new String[] {
-             "kind", "element" //$NON-NLS-1$ //$NON-NLS-2$
+               "kind", "element" //$NON-NLS-1$ //$NON-NLS-2$
            });
     }
 

@@ -22,19 +22,10 @@ import org.eclipse.ui.browser.IWorkbenchBrowserSupport;
  */
 public class HTMLUtils {
     
-    // Previous versions
-    // "(http|https|ftp)://([\\w-]+\\.)+[\\w-]+(/[\\w- ./?%&=]*)?"             // Original
-    // "(http|https|ftp)://([\\w-]+\\.)+[\\w-]+(/[\\w- ./?%~&=]*)?"            // Added ~
-    // "(http|https|ftp)://([\\w-]+\\.)+[\\w-]+(/[\\w-./?%~&=]*)?"             // Removed space
-    // "(http|https|ftp)://([\\w-]+\\.)+[\\w-]+(/[\\w-./?%~&=\\(\\)]*)?"       // Added \\( and \\)
-    // "(http|https|ftp)://([\\w-]+\\.)+[\\w-]+(/[\\w-./?%~#!&=\\(\\)]*)?"     // Added # and !
-    // "(http|https|ftp)://([\\w-]+\\.)+[\\w-]+([\\w-./?%~#!:&=\\(\\)]*)?"     // Removed leading / and added :
-    // "(http|https|ftp)://([\\w-]+\\.)+[\\w-]+([\\w-./?%~#!+:&=\\(\\)]*)?"    // Add +
-    
     /**
      * The reg expression for HTML links
      */
-    public static final String HTML_LINK_REGEX = "(http|https|ftp)://([\\w-]+\\.)+[\\w-]+([\\w-./?%~#!+:&=\\(\\)]*)?";  //$NON-NLS-1$
+    public static final String HTML_LINK_REGEX = "(http|https|ftp|file)://\\S+";  //$NON-NLS-1$
     
     /**
      * The compiled pattern to match HTML links
@@ -68,29 +59,13 @@ public class HTMLUtils {
     /**
      * Open a link in a Browser
      * @param href
+     * @throws PartInitException 
+     * @throws MalformedURLException 
      */
-    public static void openLinkInBrowser(String href) {
-        // format the href for an html file (file:///<filename.html>
-        // required for Mac only.
-        if(href.startsWith("file:")) { //$NON-NLS-1$
-            href = href.substring(5);
-            while(href.startsWith("/")) { //$NON-NLS-1$
-                href = href.substring(1);
-            }
-            href = "file:///" + href; //$NON-NLS-1$
-        }
-        
+    public static void openLinkInBrowser(String href) throws PartInitException, MalformedURLException {
         IWorkbenchBrowserSupport support = PlatformUI.getWorkbench().getBrowserSupport();
-        try {
-            IWebBrowser browser = support.getExternalBrowser();
-            browser.openURL(new URL(urlEncodeForSpaces(href.toCharArray())));
-        }
-        catch(MalformedURLException ex) {
-            ex.printStackTrace();
-        }
-        catch(PartInitException ex) {
-            ex.printStackTrace();
-        }
+        IWebBrowser browser = support.getExternalBrowser();
+        browser.openURL(new URL(urlEncodeForSpaces(href.toCharArray())));
     }
 
     private static String urlEncodeForSpaces(char[] input) {

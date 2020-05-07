@@ -6,9 +6,7 @@
 package com.archimatetool.canvas.factory;
 
 import org.eclipse.draw2d.geometry.Dimension;
-import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gef.EditPart;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
@@ -16,8 +14,10 @@ import org.eclipse.swt.graphics.Image;
 import com.archimatetool.canvas.ICanvasImages;
 import com.archimatetool.canvas.editparts.CanvasStickyEditPart;
 import com.archimatetool.canvas.model.ICanvasPackage;
-import com.archimatetool.editor.ui.factory.AbstractElementUIProvider;
+import com.archimatetool.editor.ui.factory.AbstractGraphicalObjectUIProvider;
 import com.archimatetool.model.IArchimatePackage;
+import com.archimatetool.model.IDiagramModelObject;
+import com.archimatetool.model.ITextPosition;
 
 
 
@@ -26,7 +26,7 @@ import com.archimatetool.model.IArchimatePackage;
  * 
  * @author Phillip Beauvoir
  */
-public class CanvasStickyUIProvider extends AbstractElementUIProvider {
+public class CanvasStickyUIProvider extends AbstractGraphicalObjectUIProvider {
 
     @Override
     public EClass providerFor() {
@@ -50,20 +50,26 @@ public class CanvasStickyUIProvider extends AbstractElementUIProvider {
 
     @Override
     public Image getImage() {
-        return ICanvasImages.ImageFactory.getImage(ICanvasImages.ICON_CANVAS_STICKY_16);
+        return ICanvasImages.ImageFactory.getImage(ICanvasImages.ICON_CANVAS_STICKY);
     }
 
     @Override
     public ImageDescriptor getImageDescriptor() {
-        return ICanvasImages.ImageFactory.getImageDescriptor(ICanvasImages.ICON_CANVAS_STICKY_16);
+        return ICanvasImages.ImageFactory.getImageDescriptor(ICanvasImages.ICON_CANVAS_STICKY);
     }
     
     @Override
-    public boolean shouldExposeFeature(EObject instance, EAttribute feature) {
-        if(feature == IArchimatePackage.Literals.LINE_OBJECT__LINE_COLOR) {
+    public boolean shouldExposeFeature(String featureName) {
+        if(featureName == IArchimatePackage.Literals.LINE_OBJECT__LINE_COLOR.getName() ||
+                featureName == IDiagramModelObject.FEATURE_GRADIENT) {
             return false;
         }
         
-        return super.shouldExposeFeature(instance, feature);
+        return true;
+    }
+    
+    @Override
+    public int getDefaultTextPosition() {
+        return ITextPosition.TEXT_POSITION_CENTRE;
     }
 }

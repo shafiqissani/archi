@@ -35,30 +35,6 @@ public class Messages extends NLS {
 
     public static String CopySnapshot_1;
 
-    public static String CreateDerivedRelationAction_0;
-
-    public static String CreateDerivedRelationAction_1;
-
-    public static String CreateDerivedRelationAction_10;
-
-    public static String CreateDerivedRelationAction_11;
-
-    public static String CreateDerivedRelationAction_2;
-
-    public static String CreateDerivedRelationAction_3;
-
-    public static String CreateDerivedRelationAction_4;
-
-    public static String CreateDerivedRelationAction_5;
-
-    public static String CreateDerivedRelationAction_6;
-
-    public static String CreateDerivedRelationAction_7;
-
-    public static String CreateDerivedRelationAction_8;
-
-    public static String CreateDerivedRelationAction_9;
-
     public static String CutAction_0;
 
     public static String CutAction_1;
@@ -69,15 +45,15 @@ public class Messages extends NLS {
 
     public static String DeleteFromModelAction_0;
 
+    public static String DeleteFromModelAction_1;
+
+    public static String DeleteFromModelAction_2;
+
     public static String ExportAsImageAction_0;
 
     public static String ExportAsImageAction_1;
 
     public static String ExportAsImageToClipboardAction_0;
-
-    public static String ExportAsImageToClipboardAction_1;
-
-    public static String ExportAsImageToClipboardAction_2;
 
     public static String ExportAsImageToClipboardAction_3;
 
@@ -113,7 +89,13 @@ public class Messages extends NLS {
 
     public static String LockObjectAction_2;
 
+    public static String OpacityAction_0;
+
+    public static String OutlineOpacityAction_0;
+
     public static String PasteAction_0;
+
+    public static String PasteSpecialAction_0;
 
     public static String PrintModeDialog_0;
 
@@ -143,10 +125,6 @@ public class Messages extends NLS {
 
     public static String SendToBackAction_0;
 
-    public static String ShowStructuralChainsAction_0;
-
-    public static String ShowStructuralChainsAction_1;
-
     public static String TextAlignmentAction_0;
 
     public static String TextAlignmentAction_1;
@@ -160,18 +138,6 @@ public class Messages extends NLS {
     public static String TextPositionAction_1;
 
     public static String TextPositionAction_2;
-
-    public static String TextPositionAction_3;
-
-    public static String TextPositionAction_4;
-
-    public static String TextPositionAction_5;
-
-    public static String TextPositionAction_6;
-
-    public static String TextPositionAction_7;
-
-    public static String TextPositionAction_8;
 
     public static String TextPositionAction_9;
 

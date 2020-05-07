@@ -1,26 +1,27 @@
 expandFolder(folder, target) ::= <<
 <ul>
-	^folder.Folders:{f | <li class="tree-folder"><span><i class="glyphicon glyphicon-triangle-right"></i> ^f.Name^ </span>
+	^folder.Folders:{f | <li class="tree-folder"><span><i class="glyphicon glyphicon-triangle-right"></i> ^f.Name;format="xml-encode"^ </span>
 	^expandFolder(f, target)^
 	</li>}^
 	^folder.Elements:{e |
 		^if(e.Source)^
-			<li class="tree-element"><a href="^target^s/^e.Id^.html" target="^target^">
+			<li class="tree-element"><a href="^model.Id^/^target^s/^e.Id^.html" target="^target^">
 				^if(e.Name.Empty)^
 					<span class="i18n-elementtype-^e.Class.SimpleName^"></span>
 				^else^
-					^e.Name^
+					^e.Name;format="xml-encode"^
 				^endif^
-				(^e.Source.Name^ - ^e.Target.Name^) 
+				(^e.Source.Name;format="xml-encode"^ - ^e.Target.Name;format="xml-encode"^) 
 			</a></li>
 		^else^
-			<li class="tree-element"><a href="^target^s/^e.Id^.html" target="^target^"> ^e.Name^ </a></li>
+			<li class="tree-element"><a href="^model.Id^/^target^s/^e.Id^.html" target="^target^"> ^e.Name;format="xml-encode"^ </a></li>
 		^endif^
 	}^
 </ul>
 >>
 
-modelreport(model, businessFolder, applicationFolder, technologyFolder, motivationFolder, implementationFolder, connectorsFolder, relationsFolder, viewsFolder) ::= <<
+
+modelreport(model, strategyFolder, businessFolder, applicationFolder, technologyFolder, motivationFolder, implementationFolder, otherFolder, relationsFolder, viewsFolder) ::= <<
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html class="model" lang="en">
 <head>
@@ -47,7 +48,7 @@ modelreport(model, businessFolder, applicationFolder, technologyFolder, motivati
 	<div class="ui-layout-north">
 		<nav class="navbar navbar-default">
 			<div class="navbar-header">
-				<span class="navbar-brand">^model.Name^</span>
+				<span class="navbar-brand">^model.Name;format="xml-encode"^</span>
 			</div>
 			<div class="collapse navbar-collapse">
 				<ul class="nav navbar-nav navbar-right">
@@ -57,7 +58,7 @@ modelreport(model, businessFolder, applicationFolder, technologyFolder, motivati
 		</nav>
 	</div>
 
-	<iframe name="view" class="ui-layout-center" src="views/model.html" scrolling="no"></iframe>
+	<iframe name="view" class="ui-layout-center" src="^model.Id^/elements/model.html" scrolling="no"></iframe>
 
 	<div class="ui-layout-west">
 		<iframe name="element" class="ui-layout-south" src="elements/empty-element.html"  scrolling="no"></iframe>
@@ -67,11 +68,14 @@ modelreport(model, businessFolder, applicationFolder, technologyFolder, motivati
 					<b><span class="i18n-modeltree"></span></b>
 				</div>
 				<div class="panel-body root-panel-body">
-					<b><a href="views/model.html" target="view">^model.Name^</a></b>
+					<b><a href="^model.Id^/elements/model.html" target="view">^model.Name;format="xml-encode"^</a></b>
 					<ul class="tree">
 					<!-- START OF STRINGTEMPLATE CODE -->
 						<li><span class="i18n-model_content"><i class="glyphicon glyphicon-triangle-right"></i> </span>
 							<ul>
+                                <li><span class="i18n-strategy"><i class="glyphicon glyphicon-triangle-right"></i> </span>
+                                    ^expandFolder(strategyFolder, "element")^
+                                </li>
 								<li><span class="i18n-business_layer"><i class="glyphicon glyphicon-triangle-right"></i> </span>
 									^expandFolder(businessFolder, "element")^
 								</li>
@@ -88,7 +92,7 @@ modelreport(model, businessFolder, applicationFolder, technologyFolder, motivati
 									^expandFolder(implementationFolder, "element")^
 								</li>
 								<li><span class="i18n-connectors"><i class="glyphicon glyphicon-triangle-right"></i> </span>
-									^expandFolder(connectorsFolder, "element")^
+									^expandFolder(otherFolder, "element")^
 								</li>
 								<li><span class="i18n-relations"><i class="glyphicon glyphicon-triangle-right"></i> </span>
 									^expandFolder(relationsFolder, "element")^
@@ -118,7 +122,7 @@ modelreport(model, businessFolder, applicationFolder, technologyFolder, motivati
 					<p><span class="i18n-about-pluginversion"></span></p>
 					<p><span class="i18n-about-plugintext1"></span></p>
 					<p><span class="i18n-about-plugintext2"></span></p>
-					<p><a href="http://www.archimatetool.com" target="_blank">Archi®</a> <span class="i18n-about-plugintext3"></span></p>
+					<p><a href="https://www.archimatetool.com" target="_blank">Archi®</a> <span class="i18n-about-plugintext3"></span></p>
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-default i18n-close" data-dismiss="modal"></button>

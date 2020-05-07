@@ -13,8 +13,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
-import junit.framework.JUnit4TestAdapter;
-
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.SWT;
@@ -33,6 +31,8 @@ import com.archimatetool.model.IArchimateModel;
 import com.archimatetool.model.INameable;
 import com.archimatetool.model.util.ArchimateModelUtils;
 import com.archimatetool.tests.TestData;
+
+import junit.framework.JUnit4TestAdapter;
 
 
 @SuppressWarnings("nls")

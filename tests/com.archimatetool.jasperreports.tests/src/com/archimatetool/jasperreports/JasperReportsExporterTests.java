@@ -12,10 +12,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 
-import junit.framework.JUnit4TestAdapter;
-import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JasperPrint;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -25,6 +21,10 @@ import com.archimatetool.model.IArchimateModel;
 import com.archimatetool.testingtools.ArchimateTestModel;
 import com.archimatetool.tests.TestData;
 import com.archimatetool.tests.TestUtils;
+
+import junit.framework.JUnit4TestAdapter;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperPrint;
 
 
 @SuppressWarnings("nls")
@@ -40,7 +40,7 @@ public class JasperReportsExporterTests {
     private static File exportFolder;
     private static File tmpFolder;
     private static String exportFileName = "archi";
-    private static File mainTemplateFile = TestSupport.STANDARD_REPORT_MAIN_FILE;
+    private static File mainTemplateFile = TestSupport.CUSTOM_REPORT_MAIN_FILE;
     private static String reportTitle = "Title";
     
     private static JasperReportsExporter exporter;
@@ -57,11 +57,11 @@ public class JasperReportsExporterTests {
         tmpFolder.mkdirs();
         
         // Create exporter
-        exporter = new JasperReportsExporter(model, exportFolder, exportFileName, mainTemplateFile, reportTitle, 0);
+        exporter = new JasperReportsExporter(model, exportFolder, exportFileName, mainTemplateFile, reportTitle, null, 0);
         
         // Set up diagrams and Jasper Print once (expensive operation)
         exporter.writeDiagrams(tmpFolder);
-        jasperPrint = exporter.createJasperPrint(null, tmpFolder);
+        jasperPrint = exporter.createJasperPrint(tmpFolder);
     }
     
     @AfterClass
@@ -81,7 +81,7 @@ public class JasperReportsExporterTests {
         File htmlFolder = new File(exportFolder, exportFileName + ".html_files");
         assertTrue(htmlFolder.exists());
         assertTrue(htmlFolder.isDirectory());
-        assertEquals(17, htmlFolder.listFiles().length);
+        assertEquals(18, htmlFolder.listFiles().length);
     }
     
     @Test

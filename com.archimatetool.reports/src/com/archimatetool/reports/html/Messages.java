@@ -13,7 +13,17 @@ public class Messages extends NLS {
 
     public static String HTMLReportAction_0;
 
+    public static String HTMLReportExporter_0;
+
     public static String HTMLReportExporter_1;
+
+    public static String HTMLReportExporter_10;
+
+    public static String HTMLReportExporter_11;
+
+    public static String HTMLReportExporter_13;
+
+    public static String HTMLReportExporter_14;
 
     public static String HTMLReportExporter_2;
 
@@ -22,6 +32,10 @@ public class Messages extends NLS {
     public static String HTMLReportExporter_4;
 
     public static String HTMLReportExporter_5;
+
+    public static String HTMLReportExporter_6;
+
+    public static String HTMLReportExporter_9;
 
     static {
         // initialize resource bundle

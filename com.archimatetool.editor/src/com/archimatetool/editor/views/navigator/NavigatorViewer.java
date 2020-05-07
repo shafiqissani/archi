@@ -6,19 +6,25 @@
 package com.archimatetool.editor.views.navigator;
 
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.jface.util.IPropertyChangeListener;
+import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.viewers.ViewerSorter;
+import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.DisposeEvent;
+import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 
-import com.archimatetool.editor.ui.ArchimateLabelProvider;
+import com.archimatetool.editor.preferences.IPreferenceConstants;
+import com.archimatetool.editor.preferences.Preferences;
+import com.archimatetool.editor.ui.ArchiLabelProvider;
+import com.archimatetool.editor.ui.UIUtils;
 import com.archimatetool.model.IArchimateElement;
-import com.archimatetool.model.IRelationship;
-import com.archimatetool.model.util.ArchimateModelUtils;
+import com.archimatetool.model.IArchimateRelationship;
 
 
 
@@ -32,14 +38,40 @@ public class NavigatorViewer extends TreeViewer {
     
     private boolean fShowTargetElements = true;
     
+    /**
+     * Application Preferences Listener
+     */
+    private IPropertyChangeListener prefsListener = new IPropertyChangeListener() {
+        @Override
+        public void propertyChange(PropertyChangeEvent event) {
+            if(event.getProperty() == IPreferenceConstants.NAVIGATOR_TREE_FONT) {
+                UIUtils.setFontFromPreferences(getTree(), IPreferenceConstants.NAVIGATOR_TREE_FONT, false);
+                refresh();
+            }
+        }
+    };
+
+    
     public NavigatorViewer(Composite parent, int style) {
         super(parent, style | SWT.MULTI);
+        
+        UIUtils.setFontFromPreferences(getTree(), IPreferenceConstants.NAVIGATOR_TREE_FONT, false);
         
         setContentProvider(new NavigatorViewerContentProvider());
         setLabelProvider(new NavigatorViewerLabelProvider());
         setAutoExpandLevel(3);
         
-        setSorter(new ViewerSorter());
+        setComparator(new ViewerComparator());
+        
+        // Listen to Preferences
+        Preferences.STORE.addPropertyChangeListener(prefsListener);
+        
+        getTree().addDisposeListener(new DisposeListener() {
+            @Override
+            public void widgetDisposed(DisposeEvent e) {
+                Preferences.STORE.removePropertyChangeListener(prefsListener);
+            }
+        });
     }
     
     public Object getActualInput() {
@@ -57,6 +89,7 @@ public class NavigatorViewer extends TreeViewer {
         if(fShowTargetElements != set) {
             fShowTargetElements = set;
             refresh();
+            expandToLevel(3);
         }
     }
     
@@ -65,12 +98,15 @@ public class NavigatorViewer extends TreeViewer {
      */
     private class NavigatorViewerContentProvider implements ITreeContentProvider {
         
+        @Override
         public void inputChanged(Viewer v, Object oldInput, Object newInput) {
         }
         
+        @Override
         public void dispose() {
         }
         
+        @Override
         public Object[] getElements(Object parent) {
             if(parent instanceof Object[]) {
                 // Check if it was deleted
@@ -84,9 +120,10 @@ public class NavigatorViewer extends TreeViewer {
             return new Object[0];
         }
 
+        @Override
         public Object[] getChildren(Object parent) {
-            if(parent instanceof IRelationship) {
-                IRelationship relation = (IRelationship)parent;
+            if(parent instanceof IArchimateRelationship) {
+                IArchimateRelationship relation = (IArchimateRelationship)parent;
                 if(fShowTargetElements) {
                     return new Object[] { relation.getTarget() };
                 }
@@ -97,20 +134,22 @@ public class NavigatorViewer extends TreeViewer {
             else if(parent instanceof IArchimateElement) {
                 IArchimateElement element = (IArchimateElement)parent;
                 if(fShowTargetElements) {
-                    return ArchimateModelUtils.getSourceRelationships(element).toArray();
+                    return element.getSourceRelationships().toArray();
                 }
                 else {
-                    return ArchimateModelUtils.getTargetRelationships(element).toArray();
+                    return element.getTargetRelationships().toArray();
                 }
             }
             
             return new Object[0];
         }
 
+        @Override
         public Object getParent(Object element) {
             return null;
         }
 
+        @Override
         public boolean hasChildren(Object element) {
             return getChildren(element).length > 0;
         }
@@ -124,12 +163,12 @@ public class NavigatorViewer extends TreeViewer {
         
         @Override
         public String getText(Object element) {
-            return ArchimateLabelProvider.INSTANCE.getLabel(element);
+            return ArchiLabelProvider.INSTANCE.getLabelNormalised(element);
         }
         
         @Override
         public Image getImage(Object element) {
-            return ArchimateLabelProvider.INSTANCE.getImage(element);
+            return ArchiLabelProvider.INSTANCE.getImage(element);
         }
     }
     

@@ -11,6 +11,8 @@ public class Messages extends NLS {
 
     private static final String BUNDLE_NAME = "com.archimatetool.editor.actions.messages"; //$NON-NLS-1$
 
+    public static String ArchiActionFactory_0;
+
     public static String ArchimateEditorActionBarAdvisor_0;
 
     public static String ArchimateEditorActionBarAdvisor_1;
@@ -96,6 +98,12 @@ public class Messages extends NLS {
     public static String InstallPluginAction_2;
 
     public static String InstallPluginAction_3;
+
+    public static String InstallPluginAction_4;
+
+    public static String InstallPluginAction_5;
+
+    public static String InstallPluginAction_6;
 
     public static String MRUMenuManager_0;
 

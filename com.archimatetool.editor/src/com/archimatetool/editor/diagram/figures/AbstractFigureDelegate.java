@@ -20,7 +20,7 @@ public class AbstractFigureDelegate implements IFigureDelegate {
     
     private IDiagramModelObjectFigure fOwner;
     
-    private boolean fIsEnabled;
+    private boolean fIsEnabled = true;
     
     protected AbstractFigureDelegate(IDiagramModelObjectFigure owner) {
         fOwner = owner;
@@ -72,6 +72,27 @@ public class AbstractFigureDelegate implements IFigureDelegate {
      */
     protected Color getLineColor() {
         return getOwner().getLineColor();
+    }
+
+    /**
+     * @return The owner's alpha fill transparency
+     */
+    protected int getAlpha() {
+        return getOwner().getDiagramModelObject().getAlpha();
+    }
+
+    /**
+     * @return The owner's alpha line transparency
+     */
+    protected int getLineAlpha() {
+        return getOwner().getDiagramModelObject().getLineAlpha();
+    }
+    
+    /**
+     * @return The owner's gradient setting
+     */
+    protected int getGradient() {
+        return getOwner().getDiagramModelObject().getGradient();
     }
 
     /**

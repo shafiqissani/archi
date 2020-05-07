@@ -54,13 +54,12 @@ public class BrowserEditor extends EditorPart implements IBrowserEditor {
         if(fBrowser == null) {
             Label label = new Label(parent, SWT.NONE);
             label.setText(Messages.BrowserEditor_0);
+            label.setBackground(parent.getDisplay().getSystemColor(SWT.COLOR_WHITE));
             label.setLayoutData(new GridData(GridData.FILL, GridData.FILL, true, true));
             return;
         }
         
         BrowserEditorInput input = (BrowserEditorInput)getEditorInput();
-        
-        input.browser = fBrowser;
         
         // Set URL
         if(input.getURL() != null) {
@@ -90,6 +89,7 @@ public class BrowserEditor extends EditorPart implements IBrowserEditor {
         return browser;
     }
     
+    @Override
     public void setBrowserEditorInput(BrowserEditorInput input) {
         setInput(input);
         
@@ -103,6 +103,7 @@ public class BrowserEditor extends EditorPart implements IBrowserEditor {
     /**
      * @return The Browser component
      */
+    @Override
     public Browser getBrowser() {
         return fBrowser;
     }

@@ -6,9 +6,7 @@
 package com.archimatetool.editor.ui.factory.diagram;
 
 import org.eclipse.draw2d.geometry.Dimension;
-import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
-import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gef.EditPart;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Color;
@@ -16,9 +14,10 @@ import org.eclipse.swt.graphics.Image;
 
 import com.archimatetool.editor.diagram.editparts.diagram.DiagramImageEditPart;
 import com.archimatetool.editor.ui.ColorFactory;
-import com.archimatetool.editor.ui.IArchimateImages;
-import com.archimatetool.editor.ui.factory.AbstractElementUIProvider;
+import com.archimatetool.editor.ui.IArchiImages;
+import com.archimatetool.editor.ui.factory.AbstractGraphicalObjectUIProvider;
 import com.archimatetool.model.IArchimatePackage;
+import com.archimatetool.model.IDiagramModelObject;
 
 
 
@@ -27,8 +26,9 @@ import com.archimatetool.model.IArchimatePackage;
  * 
  * @author Phillip Beauvoir
  */
-public class DiagramImageUIProvider extends AbstractElementUIProvider {
+public class DiagramImageUIProvider extends AbstractGraphicalObjectUIProvider {
 
+    @Override
     public EClass providerFor() {
         return IArchimatePackage.eINSTANCE.getDiagramModelImage();
     }
@@ -50,12 +50,12 @@ public class DiagramImageUIProvider extends AbstractElementUIProvider {
 
     @Override
     public Image getImage() {
-        return IArchimateImages.ImageFactory.getImage(IArchimateImages.ICON_LANDSCAPE_16);
+        return IArchiImages.ImageFactory.getImage(IArchiImages.ICON_LANDSCAPE);
     }
 
     @Override
     public ImageDescriptor getImageDescriptor() {
-        return IArchimateImages.ImageFactory.getImageDescriptor(IArchimateImages.ICON_LANDSCAPE_16);
+        return IArchiImages.ImageFactory.getImageDescriptor(IArchiImages.ICON_LANDSCAPE);
     }
 
     @Override
@@ -64,8 +64,10 @@ public class DiagramImageUIProvider extends AbstractElementUIProvider {
     }
     
     @Override
-    public boolean shouldExposeFeature(EObject instance, EAttribute feature) {
-        return feature == IArchimatePackage.Literals.BORDER_OBJECT__BORDER_COLOR;
+    public boolean shouldExposeFeature(String featureName) {
+        return featureName == IArchimatePackage.Literals.BORDER_OBJECT__BORDER_COLOR.getName()
+                || featureName == IArchimatePackage.Literals.DIAGRAM_MODEL_OBJECT__ALPHA.getName()
+                || featureName == IDiagramModelObject.FEATURE_LINE_ALPHA;
     }
 
 }

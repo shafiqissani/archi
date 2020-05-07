@@ -10,13 +10,20 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.ui.IEditorPart;
 
 import com.archimatetool.editor.diagram.ICreationFactory;
-import com.archimatetool.editor.ui.ArchimateLabelProvider;
+import com.archimatetool.editor.preferences.IPreferenceConstants;
+import com.archimatetool.editor.preferences.Preferences;
+import com.archimatetool.editor.ui.ArchiLabelProvider;
 import com.archimatetool.editor.ui.ColorFactory;
+import com.archimatetool.editor.ui.factory.IGraphicalObjectUIProvider;
+import com.archimatetool.editor.ui.factory.ObjectUIFactory;
 import com.archimatetool.model.IArchimateFactory;
 import com.archimatetool.model.IDiagramModelConnection;
 import com.archimatetool.model.IDiagramModelGroup;
+import com.archimatetool.model.IDiagramModelObject;
 import com.archimatetool.model.ISketchModelActor;
 import com.archimatetool.model.ISketchModelSticky;
+import com.archimatetool.model.ITextAlignment;
+import com.archimatetool.model.ITextPosition;
 
 
 
@@ -34,6 +41,7 @@ public class SketchModelFactory implements ICreationFactory {
         this(template, null);
     }
     
+    @Override
     public boolean isUsedFor(IEditorPart editor) {
         return editor instanceof ISketchEditor;
     }
@@ -48,19 +56,23 @@ public class SketchModelFactory implements ICreationFactory {
         fParam = param;
     }
     
+    @Override
     public Object getNewObject() {
         Object object = IArchimateFactory.eINSTANCE.create(fTemplate);
         
         // Actor
         if(object instanceof ISketchModelActor) {
-            ((ISketchModelActor)object).setName(ArchimateLabelProvider.INSTANCE.getDefaultName(fTemplate));
+            ((ISketchModelActor)object).setName(ArchiLabelProvider.INSTANCE.getDefaultName(fTemplate));
         }
         
         // Sticky
         else if(object instanceof ISketchModelSticky) {
             ISketchModelSticky sticky = (ISketchModelSticky)object;
-            sticky.setName(ArchimateLabelProvider.INSTANCE.getDefaultName(fTemplate));
+            sticky.setName(ArchiLabelProvider.INSTANCE.getDefaultName(fTemplate));
             
+            // Gradient
+            sticky.setGradient(Preferences.STORE.getInt(IPreferenceConstants.DEFAULT_GRADIENT));
+
             if(fParam instanceof Color) {
                 String color = ColorFactory.convertColorToString((Color)fParam);
                 sticky.setFillColor(color);
@@ -75,8 +87,10 @@ public class SketchModelFactory implements ICreationFactory {
         // Group
         else if(object instanceof IDiagramModelGroup) {
             IDiagramModelGroup group = (IDiagramModelGroup)object;
-            group.setName(ArchimateLabelProvider.INSTANCE.getDefaultName(fTemplate));
+            group.setName(ArchiLabelProvider.INSTANCE.getDefaultName(fTemplate));
             ColorFactory.setDefaultColors(group);
+            // Gradient
+            group.setGradient(Preferences.STORE.getInt(IPreferenceConstants.DEFAULT_GRADIENT));
         }
         
         // Connection
@@ -90,9 +104,20 @@ public class SketchModelFactory implements ICreationFactory {
             ColorFactory.setDefaultColors(connection);
         }
         
+        if(object instanceof ITextAlignment) {
+            IGraphicalObjectUIProvider provider = (IGraphicalObjectUIProvider)ObjectUIFactory.INSTANCE.getProvider((IDiagramModelObject)object);
+            ((IDiagramModelObject)object).setTextAlignment(provider.getDefaultTextAlignment());
+        }
+                
+        if(object instanceof ITextPosition) {
+            IGraphicalObjectUIProvider provider = (IGraphicalObjectUIProvider)ObjectUIFactory.INSTANCE.getProvider((ITextPosition)object);
+            ((ITextPosition)object).setTextPosition(provider.getDefaultTextPosition());
+        }
+        
         return object;
     }
 
+    @Override
     public Object getObjectType() {
         return fTemplate;
     }

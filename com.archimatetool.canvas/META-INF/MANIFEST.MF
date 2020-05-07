@@ -2,10 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Canvas Model Toolkit
 Bundle-SymbolicName: com.archimatetool.canvas;singleton:=true
-Bundle-Version: 3.2.1.qualifier
-Bundle-Vendor: Phillip Beauvoir
+Bundle-Version: 4.7.0.qualifier
+Bundle-Vendor: Archi
 Bundle-Localization: plugin
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Eclipse-BundleShape: dir
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.emf.ecore;visibility:=reexport,
  org.eclipse.emf.ecore.xmi;visibility:=reexport,
@@ -27,3 +28,4 @@ Export-Package: com.archimatetool.canvas,
  com.archimatetool.canvas.model.impl,
  com.archimatetool.canvas.model.util,
  com.archimatetool.canvas.policies
+Automatic-Module-Name: com.archimatetool.canvas

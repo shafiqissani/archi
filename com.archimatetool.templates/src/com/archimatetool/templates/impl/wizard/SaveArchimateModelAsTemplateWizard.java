@@ -9,6 +9,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.zip.ZipOutputStream;
 
 import org.eclipse.emf.ecore.util.EcoreUtil;
@@ -29,6 +30,7 @@ import com.archimatetool.model.IArchimateModel;
 import com.archimatetool.model.IDiagramModel;
 import com.archimatetool.templates.impl.model.ArchimateModelTemplate;
 import com.archimatetool.templates.impl.model.ArchimateTemplateManager;
+import com.archimatetool.templates.model.ITemplate;
 import com.archimatetool.templates.model.ITemplateGroup;
 import com.archimatetool.templates.model.ITemplateXMLTags;
 import com.archimatetool.templates.model.TemplateManager;
@@ -75,6 +77,9 @@ public class SaveArchimateModelAsTemplateWizard extends Wizard {
 
     @Override
     public boolean performFinish() {
+        // Store Preferences
+        fPage1.storePreferences();
+
         // This before the thread starts
         fZipFile = new File(fPage1.getFileName());
         
@@ -108,6 +113,7 @@ public class SaveArchimateModelAsTemplateWizard extends Wizard {
                 catch(final IOException ex) {
                     ex.printStackTrace();
                     Display.getCurrent().asyncExec(new Runnable() { // Display after wizard closes
+                        @Override
                         public void run() {
                             MessageDialog.openError(getShell(), Messages.SaveArchimateModelAsTemplateWizard_3, ex.getMessage());
                         }
@@ -123,6 +129,12 @@ public class SaveArchimateModelAsTemplateWizard extends Wizard {
         ZipOutputStream zOut = null;
         
         try {
+            // Make sure parent folder exists
+            File parent = zipFile.getParentFile();
+            if(parent != null) {
+                parent.mkdirs();
+            }
+
             // Delete any existing zip first
             zipFile.delete();
             
@@ -132,15 +144,27 @@ public class SaveArchimateModelAsTemplateWizard extends Wizard {
 
             // Add Manifest
             String manifest = createManifest();
-            ZipUtils.addStringToZip(manifest, TemplateManager.ZIP_ENTRY_MANIFEST, zOut);
+            ZipUtils.addStringToZip(manifest, TemplateManager.ZIP_ENTRY_MANIFEST, zOut, Charset.forName("UTF-8")); //$NON-NLS-1$
             
-            // Add any thumbnails
+            // Add Thumbnails but no more than MAX_THUMBNAILS and the key thumb as well
             if(fIncludeThumbnails) {
-                int i = 1;
+                int count = 2;
+                
                 for(IDiagramModel dm : fModel.getDiagramModels()) {
-                    Image image = TemplateUtils.createThumbnailImage(dm);
-                    ZipUtils.addImageToZip(image, TemplateManager.ZIP_ENTRY_THUMBNAILS + i++ + ".png", zOut, SWT.IMAGE_PNG, null); //$NON-NLS-1$
-                    image.dispose();
+                    int index = -1;
+                    
+                    if(fSelectedDiagramModel == dm) { // key thumbnail
+                        index = 1;
+                    }
+                    else if(count <= ITemplate.MAX_THUMBNAILS) { //others
+                        index = count++;
+                    }
+                    
+                    if(index != -1) {
+                        Image image = TemplateUtils.createThumbnailImage(dm);
+                        ZipUtils.addImageToZip(image, TemplateManager.ZIP_ENTRY_THUMBNAILS + index + ".png", zOut, SWT.IMAGE_PNG, null); //$NON-NLS-1$
+                        image.dispose();
+                    }
                 }
             }
 
@@ -186,21 +210,11 @@ public class SaveArchimateModelAsTemplateWizard extends Wizard {
         elementDescription.setText(fTemplateDescription);
         root.addContent(elementDescription);
         
-        // Thumbnails
+        // Key thumbnail
         if(fIncludeThumbnails) {
-            if(fSelectedDiagramModel != null) {
-                int i = 1;
-                for(IDiagramModel dm : fModel.getDiagramModels()) {
-                    if(dm == fSelectedDiagramModel) {
-                        String keyThumb = TemplateManager.ZIP_ENTRY_THUMBNAILS + i + ".png"; //$NON-NLS-1$
-                        Element elementKeyThumb = new Element(ITemplateXMLTags.XML_TEMPLATE_ELEMENT_KEY_THUMBNAIL);
-                        elementKeyThumb.setText(keyThumb);
-                        root.addContent(elementKeyThumb);
-                        break;
-                    }
-                    i++;
-                }
-            }
+            Element elementKeyThumb = new Element(ITemplateXMLTags.XML_TEMPLATE_ELEMENT_KEY_THUMBNAIL);
+            elementKeyThumb.setText(TemplateManager.ZIP_ENTRY_THUMBNAILS + "1.png");  //$NON-NLS-1$
+            root.addContent(elementKeyThumb);
         }
         
         return JDOMUtils.write2XMLString(doc);
@@ -215,10 +229,10 @@ public class SaveArchimateModelAsTemplateWizard extends Wizard {
         tempModel.eAdapters().clear();
         tempModel.setFile(tmpFile);
         
-        // Create a temp Archive Manager to save the temp model
-        IArchiveManager archiveManager = IArchiveManager.FACTORY.createArchiveManager(tempModel);
+        // Clone the Archive Manager for saving
+        IArchiveManager archiveManager = ((IArchiveManager)fModel.getAdapter(IArchiveManager.class)).clone(tempModel);
+        tempModel.setAdapter(IArchiveManager.class, archiveManager);
         archiveManager.saveModel();
-        archiveManager.dispose();
         
         return tmpFile;
     }
@@ -226,6 +240,11 @@ public class SaveArchimateModelAsTemplateWizard extends Wizard {
     @Override
     public void dispose() {
         super.dispose();
+        
         fTemplateManager.dispose();
+        
+        fTemplateManager = null;
+        fModel = null;
+        fSelectedDiagramModel = null;
     }
 }

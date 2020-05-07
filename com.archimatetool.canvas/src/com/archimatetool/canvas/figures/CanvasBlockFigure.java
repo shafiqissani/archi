@@ -22,7 +22,7 @@ import org.eclipse.swt.graphics.Color;
 
 import com.archimatetool.canvas.model.ICanvasModelBlock;
 import com.archimatetool.editor.diagram.figures.AbstractContainerFigure;
-import com.archimatetool.editor.diagram.util.AnimationUtil;
+import com.archimatetool.editor.diagram.figures.TextPositionDelegate;
 import com.archimatetool.editor.ui.ColorFactory;
 import com.archimatetool.editor.utils.StringUtils;
 
@@ -53,6 +53,7 @@ public class CanvasBlockFigure extends AbstractContainerFigure {
         setLayoutManager(new DelegatingLayout());
 
         Locator mainLocator = new Locator() {
+            @Override
             public void relocate(IFigure target) {
                 Rectangle bounds = getBounds().getCopy();
                 translateFromParent(bounds);
@@ -76,13 +77,11 @@ public class CanvasBlockFigure extends AbstractContainerFigure {
         // This last
         add(getMainFigure(), mainLocator);
 
-        // Have to add this if we want Animation to work on figures!
-        AnimationUtil.addFigureForAnimation(getMainFigure());
-
         fIconicDelegate = new IconicDelegate(getDiagramModelObject());
         fIconicDelegate.updateImage();
     }
     
+    @Override
     public void refreshVisuals() {
         // Text
         setText();
@@ -104,6 +103,9 @@ public class CanvasBlockFigure extends AbstractContainerFigure {
         
         // Text Position
         fTextPositionDelegate.updateTextPosition();
+
+        // Repaint
+        repaint();
     }
 
     public void updateImage() {
@@ -132,6 +134,7 @@ public class CanvasBlockFigure extends AbstractContainerFigure {
         return fBorderColor;
     }
 
+    @Override
     public TextFlow getTextControl() {
         return fTextFlow;
     }
@@ -140,6 +143,8 @@ public class CanvasBlockFigure extends AbstractContainerFigure {
     protected void drawFigure(Graphics graphics) {
         graphics.setAntialias(SWT.ON);
         
+        graphics.setAlpha(getAlpha());
+        
         Rectangle bounds = getBounds().getCopy();
         
         graphics.setBackgroundColor(getFillColor());
@@ -147,6 +152,7 @@ public class CanvasBlockFigure extends AbstractContainerFigure {
         
         // Border
         if(getBorderColor() != null) {
+            graphics.setAlpha(getLineAlpha());
             graphics.setForegroundColor(getBorderColor());
             graphics.drawRectangle(new Rectangle(bounds.x, bounds.y, bounds.width - 1, bounds.height - 1));
         }

@@ -5,12 +5,12 @@
  */
 package com.archimatetool.editor.diagram.figures;
 
-import org.eclipse.draw2d.ColorConstants;
 import org.eclipse.draw2d.Graphics;
 import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.swt.graphics.Pattern;
 
-import com.archimatetool.editor.preferences.IPreferenceConstants;
-import com.archimatetool.editor.preferences.Preferences;
+import com.archimatetool.editor.diagram.figures.FigureUtils.Direction;
+import com.archimatetool.model.IDiagramModelObject;
 
 
 
@@ -21,8 +21,6 @@ import com.archimatetool.editor.preferences.Preferences;
  */
 public class EllipseFigureDelegate extends AbstractFigureDelegate {
     
-    protected static final int SHADOW_OFFSET = 2;
-    
     public EllipseFigureDelegate(IDiagramModelObjectFigure owner) {
         super(owner);
     }
@@ -32,42 +30,34 @@ public class EllipseFigureDelegate extends AbstractFigureDelegate {
         graphics.pushState();
         
         Rectangle bounds = getBounds();
-        
-        boolean drawShadows = Preferences.STORE.getBoolean(IPreferenceConstants.SHOW_SHADOWS);
 
-        if(isEnabled()) {
-            if(drawShadows) {
-                graphics.setAlpha(100);
-                graphics.setBackgroundColor(ColorConstants.black);
-                graphics.fillOval(new Rectangle(bounds.x + SHADOW_OFFSET, bounds.y + SHADOW_OFFSET, bounds.width - SHADOW_OFFSET, bounds.height - SHADOW_OFFSET));
-                graphics.setAlpha(255);
-            }
-        }
-        else {
+        graphics.setAlpha(getAlpha());
+        
+        if(!isEnabled()) {
             setDisabledState(graphics);
         }
         
-        int shadow_offset = drawShadows ? SHADOW_OFFSET : 0;
-        
-        bounds.width -= shadow_offset;
-        bounds.height -= shadow_offset;
-            
         graphics.setBackgroundColor(getFillColor());
+        
+        Pattern gradient = null;
+        if(getGradient() != IDiagramModelObject.GRADIENT_NONE) {
+            gradient = FigureUtils.createGradient(graphics, bounds, getFillColor(), getAlpha(), Direction.get(getGradient()));
+            graphics.setBackgroundPattern(gradient);
+        }
+        
         graphics.fillOval(bounds);
+        
+        if(gradient != null) {
+            gradient.dispose();
+        }
 
         // Outline
         bounds.width--;
         bounds.height--;
+        graphics.setAlpha(getLineAlpha());
         graphics.setForegroundColor(getLineColor());
         graphics.drawOval(bounds);
         
         graphics.popState();
-    }
-    
-    @Override
-    public Rectangle calculateTextControlBounds() {
-        Rectangle bounds = getBounds();
-        bounds.y += 10;
-        return bounds;
     }
 }

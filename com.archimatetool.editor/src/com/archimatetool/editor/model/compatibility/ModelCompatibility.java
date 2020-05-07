@@ -36,7 +36,8 @@ public class ModelCompatibility {
     
     private Resource fResource;
     
-    boolean doLog = true;
+    // Too noisy converting from A2 to A3 models
+    boolean doLog = false;
     
     public ModelCompatibility(Resource resource) {
         fResource = resource;

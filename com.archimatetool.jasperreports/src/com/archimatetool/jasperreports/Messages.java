@@ -73,6 +73,8 @@ public class Messages extends NLS {
 
     public static String ExportJasperReportsWizardPage2_5;
 
+    public static String ExportJasperReportsWizardPage2_6;
+
     public static String JasperReportsExporter_0;
 
     public static String JasperReportsExporter_1;
@@ -80,6 +82,8 @@ public class Messages extends NLS {
     public static String JasperReportsExporter_10;
 
     public static String JasperReportsExporter_11;
+
+    public static String JasperReportsExporter_12;
 
     public static String JasperReportsExporter_2;
 

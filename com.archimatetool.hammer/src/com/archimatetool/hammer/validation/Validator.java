@@ -18,6 +18,7 @@ import com.archimatetool.hammer.validation.checkers.DuplicateElementChecker;
 import com.archimatetool.hammer.validation.checkers.EmptyViewsChecker;
 import com.archimatetool.hammer.validation.checkers.IChecker;
 import com.archimatetool.hammer.validation.checkers.InvalidRelationsChecker;
+import com.archimatetool.hammer.validation.checkers.JunctionsChecker;
 import com.archimatetool.hammer.validation.checkers.NestedElementsChecker;
 import com.archimatetool.hammer.validation.checkers.UnusedElementsChecker;
 import com.archimatetool.hammer.validation.checkers.UnusedRelationsChecker;
@@ -34,7 +35,7 @@ import com.archimatetool.hammer.validation.issues.WarningsCategory;
 import com.archimatetool.model.IArchimateDiagramModel;
 import com.archimatetool.model.IArchimateElement;
 import com.archimatetool.model.IArchimateModel;
-import com.archimatetool.model.IRelationship;
+import com.archimatetool.model.IArchimateRelationship;
 
 
 /**
@@ -47,7 +48,7 @@ public class Validator {
     private IArchimateModel fModel;
     
     private List<IArchimateElement> fElements;
-    private List<IRelationship> fRelations;
+    private List<IArchimateRelationship> fRelations;
     private List<IArchimateDiagramModel> fViews;
     
     private List<ErrorType> fErrorList;
@@ -69,14 +70,14 @@ public class Validator {
         
         // Collect interesting objects
         fElements = new ArrayList<IArchimateElement>();
-        fRelations = new ArrayList<IRelationship>();
+        fRelations = new ArrayList<IArchimateRelationship>();
         fViews = new ArrayList<IArchimateDiagramModel>();
         
         for(Iterator<EObject> iter = fModel.eAllContents(); iter.hasNext();) {
             EObject eObject = iter.next();
             
-            if(eObject instanceof IRelationship) {
-                fRelations.add((IRelationship)eObject);
+            if(eObject instanceof IArchimateRelationship) {
+                fRelations.add((IArchimateRelationship)eObject);
             }
             else if(eObject instanceof IArchimateElement) {
                 fElements.add((IArchimateElement)eObject);
@@ -99,37 +100,42 @@ public class Validator {
         
         // Invalid Relations
         if(store.getBoolean(IPreferenceConstants.PREFS_HAMMER_CHECK_INVALID_RELATIONS)) {
-            collectIssues(new InvalidRelationsChecker(this));
+            collectIssues(new InvalidRelationsChecker(getArchimateRelationships()));
         }
         
         // Unused Elements
         if(store.getBoolean(IPreferenceConstants.PREFS_HAMMER_CHECK_UNUSED_ELEMENTS)) {
-            collectIssues(new UnusedElementsChecker(this));
+            collectIssues(new UnusedElementsChecker(getArchimateElements()));
         }
         
         // Unused Relations
         if(store.getBoolean(IPreferenceConstants.PREFS_HAMMER_CHECK_UNUSED_RELATIONS)) {
-            collectIssues(new UnusedRelationsChecker(this));
+            collectIssues(new UnusedRelationsChecker(getArchimateRelationships()));
         }
         
         // Empty Views
         if(store.getBoolean(IPreferenceConstants.PREFS_HAMMER_CHECK_EMPTY_VIEWS)) {
-            collectIssues(new EmptyViewsChecker(this));
+            collectIssues(new EmptyViewsChecker(getArchimateViews()));
         }
         
         // Components in wrong Viewpoints
         if(store.getBoolean(IPreferenceConstants.PREFS_HAMMER_CHECK_VIEWPOINT)) {
-            collectIssues(new ViewpointChecker(this));
+            collectIssues(new ViewpointChecker(getArchimateViews()));
         }
         
         // Nested elements
         if(store.getBoolean(IPreferenceConstants.PREFS_HAMMER_CHECK_NESTING)) {
-            collectIssues(new NestedElementsChecker(this));
+            collectIssues(new NestedElementsChecker(getArchimateViews()));
         }
 
         // Possible Duplicates
         if(store.getBoolean(IPreferenceConstants.PREFS_HAMMER_CHECK_DUPLICATE_ELEMENTS)) {
-            collectIssues(new DuplicateElementChecker(this));
+            collectIssues(new DuplicateElementChecker(getArchimateElements()));
+        }
+        
+        // Junctions
+        if(store.getBoolean(IPreferenceConstants.PREFS_HAMMER_CHECK_JUNCTIONS)) {
+            collectIssues(new JunctionsChecker(getArchimateElements()));
         }
 
         // ----------------------------------------------------------
@@ -178,8 +184,8 @@ public class Validator {
         return new ArrayList<IArchimateElement>(fElements); // copy
     }
     
-    public List<IRelationship> getArchimateRelationships() {
-        return new ArrayList<IRelationship>(fRelations); // copy
+    public List<IArchimateRelationship> getArchimateRelationships() {
+        return new ArrayList<IArchimateRelationship>(fRelations); // copy
     }
     
     public List<IArchimateDiagramModel> getArchimateViews() {

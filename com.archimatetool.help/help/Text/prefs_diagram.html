@@ -12,34 +12,13 @@
 
     <h1 class="pagebreak">Diagram Preferences</h1>
     
-    <br/>
-
 	<h2>General</h2>
-	
-	<br/>
-    
-    <img src="../Images/prefs_diagram.png"/>
-    <p class="caption">Diagram General Preferences</p>
-    
-    <br/>
-    
     <p>
         <strong>Grid Size</strong>
         <br/>Sets the grid spacing used in diagram Views.
     </p>
 
-	<h3>Animation</h3>
-    <p>
-        <strong>Show Animation on Undo/Redo</strong>
-        <br/>Sets whether animation is used in diagram Views for some Undo/Redo commands
-        and when changing the View's Connection Router.
-    </p>
-    <p>
-        <strong>Animation Speed (mS)</strong>
-        <br/>Sets the animation speed in milliseconds.
-    </p>
-    
-    <br/>
+	<br/>
     
     <h2>View</h2>
     <p>
@@ -60,55 +39,86 @@
 
     <h2>Viewpoints</h2>
     <p>
-        <strong>Grey out disallowed elements in the Model Tree</strong>
-        <br/>When this option is set any elements that are disallowed in a Viewpoint
+        <strong>Grey out disallowed concepts in the Model Tree</strong>
+        <br/>When this option is set any concepts that are disallowed in a Viewpoint
         are greyed out. For more information see <a href="viewpoints.html">Viewpoints</a>.</p>
     <p>
-        <strong>Hide</strong>
-        <strong>disallowed elements from the Palette</strong>
-        <br/>When this option is set any elements that are disallowed in a Viewpoint
+        <strong>Hide disallowed concepts from the Palette</strong>
+        <br/>When this option is set any concepts that are disallowed in a Viewpoint
         are not shown in the Palette. For more information see <a href="viewpoints.html">Viewpoints</a>.</p>
     <p>
-        <strong>Hide</strong>
-        <strong>disallowed elements from the Magic Connector</strong>
-        <br/>When this option is set any elements that are disallowed in a Viewpoint
+        <strong>Hide disallowed concepts from the Magic Connector</strong>
+        <br/>When this option is set any concepts that are disallowed in a Viewpoint
         are not shown in the Magic Connector. For more information see <a href="viewpoints.html">Viewpoints</a>.</p>
     <p>
-        <strong>Ghost</strong>
-        <strong>disallowed elements in a View / Hide</strong>
-        <strong>disallowed elements in a View</strong>
-        <br/>Toggling these options either ghosts or hides disallowed elements in a
-        Viewpoint. For more information see <a href="viewpoints.html">Viewpoints</a>.</p>
+        <strong>Ghost disallowed concepts in a View</strong>
+        <br/>When this option is set disallowed concepts in a Viewpoint are "ghosted" out. For more information see <a href="viewpoints.html">Viewpoints</a>.</p>
     <p></p>
     
     <br/>
+
+    <h2>Paste Special behaviour</h2>
+    <p>
+        <strong>Always paste a reference to copied element</strong>
+        <br/>When this option is set copied elements in a diagram always reference the original elements.</p>
     
-	<h2>Appearance</h2>
-	
-	<br/>
-    
-    <img src="../Images/prefs_diagram2.png"/>
-    <p class="caption">Diagram Appearance Preferences</p>
+    <p>
+        <strong>Always paste a duplicate of copied element</strong>
+        <br/>When this option is set copied elements in a diagram are always duplicates of the original elements.</p>
+
+    <p>For more information see <a href="view_copy_paste_delete.html">Copying, Pasting, Selecting and Deleting Elements</a>.</p>
     
     <br/>
     
+    <h2>Resize behaviour</h2>
+    <p>
+        <strong>Child object positions are fixed (default)</strong>
+        <br/>When this option is set child objects maintain their absolute position when the parent object's top/left is resized. Resizing at the top or left will create new space in the parent object.</p>
+    
+    <p>
+        <strong>Child object positions are relative to parent</strong>
+        <br/>When this option is set child objects maintain their relative position to the parent object when the parent object's top/left is resized. Resizing at the top or left will not create new space in the parent object.</p>
+    
+    <br/>
+    
+    <h2>Appearance</h2>
+	
+	<br/>
+    
     <h3>Figures</h3>
     <p>
-        <strong>Show shadows on elements</strong>
-        <br/>If enabled diagram elements are drawn with a shadow.
+        <strong>Default Gradient</strong>
+        <br/>Set the default gradient for new diagram elements. <strong>Note - gradients will not show when a diagram is exported in SVG image format.</strong>
     </p>
     
     <p>
-        <strong>Default size for new ArchiMate figures</strong>
-        <br/>Set the default width and height for new ArchiMate figures.
+        <strong>Word wrap style</strong>
+        <br/>Set the default word wrap style for ArchiMate figures.<br/>
+        <br/><em>Hard</em> - wrapping will only occur at valid line breaks.
+        <br/><em>Soft</em> - wrapping will always occur at the end of the available space, breaking in the middle of a word.
+        <br/><em>Truncated</em> - wrapping will always occur at the end of available space, truncating a word if it doesn't fit.
+    </p>
+
+    <h3>Defaults for new ArchiMate figures</h3>
+
+    <p>
+        <strong>Width</strong>
+        <br/>Set the default width for new ArchiMate figures.
     </p>
 
     <p>
-        <strong>Word wrap style for ArchiMate figures</strong>
-        <br/>Set the default word wrap style for ArchiMate figures.<br/>
-        <br/>Hard - wrapping will only occur at valid line breaks.
-        <br/>Soft - wrapping will always occur at the end of the available space, breaking in the middle of a word.
-        <br/>Truncated - wrapping will always occur at the end of available space, truncating a word if it doesn't fit.
+        <strong>Height</strong>
+        <br/>Set the default height for new ArchiMate figures.
+    </p>
+
+    <p>
+        <strong>Text Alignment</strong>
+        <br/>Set the default text alignment for new ArchiMate figures.
+    </p>
+
+    <p>
+        <strong>Text Position</strong>
+        <br/>Set the default text position for new ArchiMate figures.
     </p>
 
     <h3>Sketch</h3>
@@ -122,11 +132,6 @@
 	
 	<br/>
     
-    <img src="../Images/prefs_diagram3.png"/>
-    <p class="caption">Diagram Default Figures Preferences</p>
-    
-    <br/>
-
     <p>Alternate default figures are provided for drawing certain figures in diagram Views. Click on a figure to set the default shape to be used when creating a new Figure.</p>
 
     <p>&nbsp;</p>

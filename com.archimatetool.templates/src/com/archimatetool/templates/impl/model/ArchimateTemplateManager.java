@@ -7,6 +7,7 @@ package com.archimatetool.templates.impl.model;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 import org.eclipse.swt.graphics.Image;
 import org.jdom2.Attribute;
@@ -14,11 +15,11 @@ import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
 
-import com.archimatetool.editor.ArchimateEditorPlugin;
-import com.archimatetool.editor.ui.IArchimateImages;
+import com.archimatetool.editor.ArchiPlugin;
+import com.archimatetool.editor.ui.IArchiImages;
 import com.archimatetool.editor.utils.ZipUtils;
 import com.archimatetool.jdom.JDOMUtils;
-import com.archimatetool.templates.ArchimateEditorTemplatesPlugin;
+import com.archimatetool.templates.ArchiTemplatesPlugin;
 import com.archimatetool.templates.model.ITemplate;
 import com.archimatetool.templates.model.ITemplateGroup;
 import com.archimatetool.templates.model.ITemplateXMLTags;
@@ -28,7 +29,7 @@ import com.archimatetool.templates.model.TemplateManager;
 
 
 /**
- * Archimate Template Manager.
+ * ArchiMate Template Manager.
  * Users must call dispose() when finished with it if the images in Templates are loaded
  * 
  * @author Phillip Beauvoir
@@ -37,7 +38,7 @@ public class ArchimateTemplateManager extends TemplateManager {
     
     public static final String ARCHIMATE_TEMPLATE_FILE_EXTENSION = ".architemplate"; //$NON-NLS-1$
     
-    private File fUserTemplatesFile = new File(ArchimateEditorPlugin.INSTANCE.getUserDataFolder(), "templates.xml"); //$NON-NLS-1$
+    private File fUserTemplatesFile = new File(ArchiPlugin.INSTANCE.getUserDataFolder(), "templates.xml"); //$NON-NLS-1$
     
     public ArchimateTemplateManager() {
     }
@@ -45,7 +46,7 @@ public class ArchimateTemplateManager extends TemplateManager {
     @Override
     protected ITemplateGroup loadInbuiltTemplates() {
         ITemplateGroup group = new TemplateGroup(Messages.ArchimateTemplateManager_2);
-        File folder = ArchimateEditorTemplatesPlugin.INSTANCE.getTemplatesFolder();
+        File folder = ArchiTemplatesPlugin.INSTANCE.getTemplatesFolder();
         if(folder.exists()) {
             for(File file : folder.listFiles()) {
                 if(file.getName().toLowerCase().endsWith(ARCHIMATE_TEMPLATE_FILE_EXTENSION)) {
@@ -88,7 +89,7 @@ public class ArchimateTemplateManager extends TemplateManager {
     
     @Override
     public Image getMainImage() {
-        return IArchimateImages.ImageFactory.getImage(IArchimateImages.ICON_MODELS_16);
+        return IArchiImages.ImageFactory.getImage(IArchiImages.ICON_MODELS);
     }
     
     @Override
@@ -98,7 +99,7 @@ public class ArchimateTemplateManager extends TemplateManager {
         }
         
         // Ensure the template is of the right kind
-        String xmlString = ZipUtils.extractZipEntry(file, ZIP_ENTRY_MANIFEST);
+        String xmlString = ZipUtils.extractZipEntry(file, ZIP_ENTRY_MANIFEST, Charset.forName("UTF-8")); //$NON-NLS-1$
         if(xmlString == null) {
             return false;
         }

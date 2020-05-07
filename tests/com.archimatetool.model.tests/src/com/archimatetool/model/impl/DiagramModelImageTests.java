@@ -44,4 +44,14 @@ public class DiagramModelImageTests extends DiagramModelObjectTests {
         image.setImagePath("/somepath");
         assertEquals("/somepath", image.getImagePath());
     }
+    
+    @Test
+    public void testGetProperties() {
+        CommonTests.testProperties(image);
+    }
+
+    @Test
+    public void testGetDocumentation() {
+        CommonTests.testGetDocumentation(image);
+    }
 }

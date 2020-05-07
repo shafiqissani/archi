@@ -38,7 +38,7 @@ import java.util.Iterator;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.geometry.Rectangle;
 
-import com.archimatetool.editor.diagram.figures.geometry.PolarPoint;
+import com.archimatetool.editor.diagram.figures.PolarPoint;
 import com.archimatetool.editor.preferences.IPreferenceConstants;
 import com.archimatetool.editor.preferences.Preferences;
 
@@ -57,7 +57,7 @@ public class RoundedPolylineConnection extends PolylineConnection {
 	// Radius from line-jumps
 	final double JUMP_MAX_RADIUS = 5.0;
 	// Number of intermediate points for circle and ellipse approximation
-	final double MAX_ITER = 15.0;
+	final double MAX_ITER = 6.0;
 	// Constants
 	final double SQRT2 = Math.sqrt(2.0);
 	final double PI34 = Math.PI * 3.0 / 4.0;
@@ -290,26 +290,21 @@ public class RoundedPolylineConnection extends PolylineConnection {
 	}
 	
 	/**
-	 * Allow points comparison (works only for aligned points) 
-	 * Based on this thread:
+	 * Allow points comparison
+	 * Originally based on this thread (works only for aligned points) :
 	 * http://stackoverflow.com/questions/4199509/java-how-to-sort-an-arraylist-of-point-objects
+	 * Changed in Nov. 2017 to work for loosely aligned points
 	 */
 	private static class PointCompare implements Comparator<Point> {
 		@Override
 		public int compare(final Point a, final Point b) {
-		    if (a.x < b.x) {
-		        return -1;
-		    }
-		    else if (a.x > b.x) {
-		        return 1;
-		    }
-		    else if (a.y < b.y) {
-		        return -1;
-		    }
-		    else if (a.y > b.y) {
-		        return 1;
-		    } else
-		    	return 0;
+			int delta_x = a.x - b.x;
+			int delta_y = a.y - b.y;
+			if (Math.abs(delta_x) > Math.abs(delta_y)) {
+				return (int) Math.signum(delta_x);
+			} else {
+				return (int) Math.signum(delta_y);
+			}
 		}
 	}
 }

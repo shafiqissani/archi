@@ -12,6 +12,7 @@ import org.eclipse.emf.ecore.impl.ENotificationImpl;
 import com.archimatetool.model.IArchimatePackage;
 import com.archimatetool.model.IDiagramModel;
 import com.archimatetool.model.IDiagramModelReference;
+import com.archimatetool.model.ITextPosition;
 
 
 /**
@@ -20,14 +21,33 @@ import com.archimatetool.model.IDiagramModelReference;
  * <!-- end-user-doc -->
  * <p>
  * The following features are implemented:
+ * </p>
  * <ul>
+ *   <li>{@link com.archimatetool.model.impl.DiagramModelReference#getTextPosition <em>Text Position</em>}</li>
  *   <li>{@link com.archimatetool.model.impl.DiagramModelReference#getReferencedModel <em>Referenced Model</em>}</li>
  * </ul>
- * </p>
  *
  * @generated
  */
 public class DiagramModelReference extends DiagramModelObject implements IDiagramModelReference {
+    /**
+     * The default value of the '{@link #getTextPosition() <em>Text Position</em>}' attribute.
+     * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+     * @see #getTextPosition()
+     * @generated
+     * @ordered
+     */
+    protected static final int TEXT_POSITION_EDEFAULT = 0;
+    /**
+     * The cached value of the '{@link #getTextPosition() <em>Text Position</em>}' attribute.
+     * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+     * @see #getTextPosition()
+     * @generated
+     * @ordered
+     */
+    protected int textPosition = TEXT_POSITION_EDEFAULT;
     /**
      * The cached value of the '{@link #getReferencedModel() <em>Referenced Model</em>}' reference.
      * <!-- begin-user-doc -->
@@ -61,6 +81,30 @@ public class DiagramModelReference extends DiagramModelObject implements IDiagra
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
+    public int getTextPosition() {
+        return textPosition;
+    }
+
+    /**
+     * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+     * @generated
+     */
+    @Override
+    public void setTextPosition(int newTextPosition) {
+        int oldTextPosition = textPosition;
+        textPosition = newTextPosition;
+        if (eNotificationRequired())
+            eNotify(new ENotificationImpl(this, Notification.SET, IArchimatePackage.DIAGRAM_MODEL_REFERENCE__TEXT_POSITION, oldTextPosition, textPosition));
+    }
+
+    /**
+     * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+     * @generated
+     */
+    @Override
     public IDiagramModel getReferencedModel() {
         return referencedModel;
     }
@@ -70,6 +114,7 @@ public class DiagramModelReference extends DiagramModelObject implements IDiagra
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public void setReferencedModel(IDiagramModel newReferencedModel) {
         IDiagramModel oldReferencedModel = referencedModel;
         referencedModel = newReferencedModel;
@@ -102,6 +147,8 @@ public class DiagramModelReference extends DiagramModelObject implements IDiagra
     @Override
     public Object eGet(int featureID, boolean resolve, boolean coreType) {
         switch (featureID) {
+            case IArchimatePackage.DIAGRAM_MODEL_REFERENCE__TEXT_POSITION:
+                return getTextPosition();
             case IArchimatePackage.DIAGRAM_MODEL_REFERENCE__REFERENCED_MODEL:
                 return getReferencedModel();
         }
@@ -116,6 +163,9 @@ public class DiagramModelReference extends DiagramModelObject implements IDiagra
     @Override
     public void eSet(int featureID, Object newValue) {
         switch (featureID) {
+            case IArchimatePackage.DIAGRAM_MODEL_REFERENCE__TEXT_POSITION:
+                setTextPosition((Integer)newValue);
+                return;
             case IArchimatePackage.DIAGRAM_MODEL_REFERENCE__REFERENCED_MODEL:
                 setReferencedModel((IDiagramModel)newValue);
                 return;
@@ -131,6 +181,9 @@ public class DiagramModelReference extends DiagramModelObject implements IDiagra
     @Override
     public void eUnset(int featureID) {
         switch (featureID) {
+            case IArchimatePackage.DIAGRAM_MODEL_REFERENCE__TEXT_POSITION:
+                setTextPosition(TEXT_POSITION_EDEFAULT);
+                return;
             case IArchimatePackage.DIAGRAM_MODEL_REFERENCE__REFERENCED_MODEL:
                 setReferencedModel((IDiagramModel)null);
                 return;
@@ -146,10 +199,60 @@ public class DiagramModelReference extends DiagramModelObject implements IDiagra
     @Override
     public boolean eIsSet(int featureID) {
         switch (featureID) {
+            case IArchimatePackage.DIAGRAM_MODEL_REFERENCE__TEXT_POSITION:
+                return textPosition != TEXT_POSITION_EDEFAULT;
             case IArchimatePackage.DIAGRAM_MODEL_REFERENCE__REFERENCED_MODEL:
                 return referencedModel != null;
         }
         return super.eIsSet(featureID);
+    }
+
+    /**
+     * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+     * @generated
+     */
+    @Override
+    public int eBaseStructuralFeatureID(int derivedFeatureID, Class<?> baseClass) {
+        if (baseClass == ITextPosition.class) {
+            switch (derivedFeatureID) {
+                case IArchimatePackage.DIAGRAM_MODEL_REFERENCE__TEXT_POSITION: return IArchimatePackage.TEXT_POSITION__TEXT_POSITION;
+                default: return -1;
+            }
+        }
+        return super.eBaseStructuralFeatureID(derivedFeatureID, baseClass);
+    }
+
+    /**
+     * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+     * @generated
+     */
+    @Override
+    public int eDerivedStructuralFeatureID(int baseFeatureID, Class<?> baseClass) {
+        if (baseClass == ITextPosition.class) {
+            switch (baseFeatureID) {
+                case IArchimatePackage.TEXT_POSITION__TEXT_POSITION: return IArchimatePackage.DIAGRAM_MODEL_REFERENCE__TEXT_POSITION;
+                default: return -1;
+            }
+        }
+        return super.eDerivedStructuralFeatureID(baseFeatureID, baseClass);
+    }
+
+    /**
+     * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+     * @generated
+     */
+    @Override
+    public String toString() {
+        if (eIsProxy()) return super.toString();
+
+        StringBuilder result = new StringBuilder(super.toString());
+        result.append(" (textPosition: "); //$NON-NLS-1$
+        result.append(textPosition);
+        result.append(')');
+        return result.toString();
     }
 
 } //DiagramModelReference

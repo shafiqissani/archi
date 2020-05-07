@@ -11,8 +11,7 @@ import java.util.List;
 import org.eclipse.osgi.util.NLS;
 
 import com.archimatetool.editor.model.DiagramModelUtils;
-import com.archimatetool.editor.ui.ArchimateLabelProvider;
-import com.archimatetool.hammer.validation.Validator;
+import com.archimatetool.editor.ui.ArchiLabelProvider;
 import com.archimatetool.hammer.validation.issues.IIssue;
 import com.archimatetool.hammer.validation.issues.WarningType;
 import com.archimatetool.model.IArchimateElement;
@@ -23,17 +22,20 @@ import com.archimatetool.model.IArchimateElement;
  * 
  * @author Phillip Beauvoir
  */
-public class UnusedElementsChecker extends AbstractChecker {
+public class UnusedElementsChecker implements IChecker {
     
     final String NAME = Messages.UnusedElementsChecker_0;
     final String DESCRIPTION = Messages.UnusedElementsChecker_1;
     final String EXPLANATION = Messages.UnusedElementsChecker_2 +
                                Messages.UnusedElementsChecker_3;
+    
+    private List<IArchimateElement> fArchimateElements;
 
-    public UnusedElementsChecker(Validator validator) {
-        super(validator);
+    public UnusedElementsChecker(List<IArchimateElement> archimateElements) {
+        fArchimateElements = archimateElements;
     }
 
+    @Override
     public List<IIssue> getIssues() {
         return findUnusedElements();
     }
@@ -41,9 +43,9 @@ public class UnusedElementsChecker extends AbstractChecker {
     List<IIssue> findUnusedElements() {
         List<IIssue> issues = new ArrayList<IIssue>();
         
-        for(IArchimateElement element : archimateElements) {
-            if(!DiagramModelUtils.isArchimateComponentReferencedInDiagrams(element)) {
-                String name = ArchimateLabelProvider.INSTANCE.getLabel(element);
+        for(IArchimateElement element : fArchimateElements) {
+            if(!DiagramModelUtils.isArchimateConceptReferencedInDiagrams(element)) {
+                String name = ArchiLabelProvider.INSTANCE.getLabel(element);
                 String description = NLS.bind(DESCRIPTION, name);
                 String explanation = NLS.bind(EXPLANATION, name);
                 

@@ -35,15 +35,11 @@ implements IWorkbenchPreferencePage, IPreferenceConstants {
     
     private Button fViewTooltipsButton;
     
-    private Button fDoAnimationButton;
-    private Spinner fAnimationSpeedSpinner;
-    
     private Button fPaletteStateButton;
         
     private Button fViewpointsFilterModelTreeButton;
     private Button fViewpointsHidePaletteElementsButton;
     private Button fViewpointsGhostDiagramElementsButton;
-    private Button fViewpointsHideDiagramElementsButton;
     private Button fViewpointsHideMagicConnectorElementsButton;
     
     private Button fEditNameOnNewObjectButton;
@@ -53,6 +49,19 @@ implements IWorkbenchPreferencePage, IPreferenceConstants {
     private DiagramFiguresPreferenceTab fDiagramFiguresPreferenceTab;
     private DiagramAppearancePreferenceTab fDiagramAppearancePreferenceTab;
     
+    private Button[] fPasteSpecialButtons;
+    
+    private String[] PASTE_SPECIAL_BEHAVIOR = {
+            Messages.DiagramPreferencePage_22,
+            Messages.DiagramPreferencePage_23
+    };
+    
+    private Button[] fResizeBehaviourButtons;
+    
+    private String[] RESIZE_BEHAVIOUR = {
+            Messages.DiagramPreferencePage_0,
+            Messages.DiagramPreferencePage_2
+    };
     
 	/**
 	 * Constructor
@@ -99,28 +108,6 @@ implements IWorkbenchPreferencePage, IPreferenceConstants {
         fGridSizeSpinner = new Spinner(c, SWT.BORDER);
         fGridSizeSpinner.setMinimum(5);
         fGridSizeSpinner.setMaximum(100);
-        
-        // -------------- Animation ----------------------------
-        
-        Group animationGroup = new Group(client, SWT.NULL);
-        animationGroup.setText(Messages.DiagramPreferencePage_0);
-        animationGroup.setLayout(new GridLayout(2, false));
-        animationGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-        
-        // Animate Layout
-        fDoAnimationButton = new Button(animationGroup, SWT.CHECK);
-        fDoAnimationButton.setText(Messages.DiagramPreferencePage_2);
-        gd = new GridData(GridData.FILL_HORIZONTAL);
-        gd.horizontalSpan = 2;
-        fDoAnimationButton.setLayoutData(gd);
-
-        // Animation Speed
-        label = new Label(animationGroup, SWT.NULL);
-        label.setText(Messages.DiagramPreferencePage_3);
-
-        fAnimationSpeedSpinner = new Spinner(animationGroup, SWT.BORDER);
-        fAnimationSpeedSpinner.setMinimum(10);
-        fAnimationSpeedSpinner.setMaximum(500);
         
         // -------------- View ----------------------------
 
@@ -169,16 +156,40 @@ implements IWorkbenchPreferencePage, IPreferenceConstants {
         gd.horizontalSpan = 2;
         fViewpointsHideMagicConnectorElementsButton.setLayoutData(gd);
 
-        fViewpointsGhostDiagramElementsButton = new Button(viewpointsGroup, SWT.RADIO);
+        fViewpointsGhostDiagramElementsButton = new Button(viewpointsGroup, SWT.CHECK);
         fViewpointsGhostDiagramElementsButton.setText(Messages.DiagramPreferencePage_17);
         gd = new GridData(GridData.FILL_HORIZONTAL);
         fViewpointsGhostDiagramElementsButton.setLayoutData(gd);
         
-        fViewpointsHideDiagramElementsButton = new Button(viewpointsGroup, SWT.RADIO);
-        fViewpointsHideDiagramElementsButton.setText(Messages.DiagramPreferencePage_18);
-        gd = new GridData(GridData.FILL_HORIZONTAL);
-        fViewpointsHideDiagramElementsButton.setLayoutData(gd);
+        // -------------- Paste Special ----------------------------
+        Group pasteSpecialGroup = new Group(client, SWT.NULL);
+        pasteSpecialGroup.setText(Messages.DiagramPreferencePage_21);
+        pasteSpecialGroup.setLayout(new GridLayout());
+        pasteSpecialGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         
+        fPasteSpecialButtons = new Button[2];
+        for(int i = 0; i < fPasteSpecialButtons.length; i++) {
+        	fPasteSpecialButtons[i] = new Button(pasteSpecialGroup, SWT.RADIO);
+        	fPasteSpecialButtons[i].setText(PASTE_SPECIAL_BEHAVIOR[i]);
+            gd = new GridData(GridData.FILL_HORIZONTAL);
+            fPasteSpecialButtons[i].setLayoutData(gd);
+        }
+        
+        // -------------- Resize Behaviour ----------------------------
+        
+        Group resizeGroup = new Group(client, SWT.NULL);
+        resizeGroup.setText(Messages.DiagramPreferencePage_10);
+        resizeGroup.setLayout(new GridLayout());
+        resizeGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+        
+        fResizeBehaviourButtons = new Button[2];
+        for(int i = 0; i < fResizeBehaviourButtons.length; i++) {
+            fResizeBehaviourButtons[i] = new Button(resizeGroup, SWT.RADIO);
+            fResizeBehaviourButtons[i].setText(RESIZE_BEHAVIOUR[i]);
+            gd = new GridData(GridData.FILL_HORIZONTAL);
+            fResizeBehaviourButtons[i].setLayoutData(gd);
+        }
+
         setValues();
     }
     
@@ -203,8 +214,6 @@ implements IWorkbenchPreferencePage, IPreferenceConstants {
     private void setValues() {
         setSpinnerValues();
         
-        fDoAnimationButton.setSelection(getPreferenceStore().getBoolean(ANIMATE));
-        
         fPaletteStateButton.setSelection(getPreferenceStore().getBoolean(PALETTE_STATE));
         fViewTooltipsButton.setSelection(getPreferenceStore().getBoolean(VIEW_TOOLTIPS));
         
@@ -212,33 +221,48 @@ implements IWorkbenchPreferencePage, IPreferenceConstants {
         fViewpointsHidePaletteElementsButton.setSelection(getPreferenceStore().getBoolean(VIEWPOINTS_HIDE_PALETTE_ELEMENTS));
         fViewpointsHideMagicConnectorElementsButton.setSelection(getPreferenceStore().getBoolean(VIEWPOINTS_HIDE_MAGIC_CONNECTOR_ELEMENTS));
         
-        fViewpointsGhostDiagramElementsButton.setSelection(!getPreferenceStore().getBoolean(VIEWPOINTS_HIDE_DIAGRAM_ELEMENTS));
-        fViewpointsHideDiagramElementsButton.setSelection(getPreferenceStore().getBoolean(VIEWPOINTS_HIDE_DIAGRAM_ELEMENTS));
+        fViewpointsGhostDiagramElementsButton.setSelection(getPreferenceStore().getBoolean(VIEWPOINTS_GHOST_DIAGRAM_ELEMENTS));
         
         fEditNameOnNewObjectButton.setSelection(getPreferenceStore().getBoolean(EDIT_NAME_ON_NEW_OBJECT));
+        
+        for(int i = 0; i < fPasteSpecialButtons.length; i++) {
+        	fPasteSpecialButtons[i].setSelection(getPreferenceStore().getInt(DIAGRAM_PASTE_SPECIAL_BEHAVIOR) == i);
+        }
+        
+        for(int i = 0; i < fResizeBehaviourButtons.length; i++) {
+            fResizeBehaviourButtons[i].setSelection(getPreferenceStore().getInt(DIAGRAM_OBJECT_RESIZE_BEHAVIOUR) == i);
+        }
     }
     
     private void setSpinnerValues() {
         fGridSizeSpinner.setSelection(getPreferenceStore().getInt(GRID_SIZE));
-        fAnimationSpeedSpinner.setSelection(getPreferenceStore().getInt(ANIMATION_SPEED));
     }
     
     @Override
     public boolean performOk() {
         getPreferenceStore().setValue(GRID_SIZE, fGridSizeSpinner.getSelection());
 
-        getPreferenceStore().setValue(ANIMATE, fDoAnimationButton.getSelection());
-        getPreferenceStore().setValue(ANIMATION_SPEED, fAnimationSpeedSpinner.getSelection());
-        
         getPreferenceStore().setValue(PALETTE_STATE, fPaletteStateButton.getSelection());
         getPreferenceStore().setValue(VIEW_TOOLTIPS, fViewTooltipsButton.getSelection());
         
         getPreferenceStore().setValue(VIEWPOINTS_FILTER_MODEL_TREE, fViewpointsFilterModelTreeButton.getSelection());
         getPreferenceStore().setValue(VIEWPOINTS_HIDE_PALETTE_ELEMENTS, fViewpointsHidePaletteElementsButton.getSelection());
         getPreferenceStore().setValue(VIEWPOINTS_HIDE_MAGIC_CONNECTOR_ELEMENTS, fViewpointsHideMagicConnectorElementsButton.getSelection());
-        getPreferenceStore().setValue(VIEWPOINTS_HIDE_DIAGRAM_ELEMENTS, fViewpointsHideDiagramElementsButton.getSelection());
+        getPreferenceStore().setValue(VIEWPOINTS_GHOST_DIAGRAM_ELEMENTS, fViewpointsGhostDiagramElementsButton.getSelection());
         
         getPreferenceStore().setValue(EDIT_NAME_ON_NEW_OBJECT, fEditNameOnNewObjectButton.getSelection());
+        
+        for(int i = 0; i < fPasteSpecialButtons.length; i++) {
+            if(fPasteSpecialButtons[i].getSelection()) {
+                getPreferenceStore().setValue(DIAGRAM_PASTE_SPECIAL_BEHAVIOR, i);
+            }
+        }
+        
+        for(int i = 0; i < fResizeBehaviourButtons.length; i++) {
+            if(fResizeBehaviourButtons[i].getSelection()) {
+                getPreferenceStore().setValue(DIAGRAM_OBJECT_RESIZE_BEHAVIOUR, i);
+            }
+        }
         
         fDiagramFiguresPreferenceTab.performOk();
         fDiagramAppearancePreferenceTab.performOk();
@@ -271,9 +295,6 @@ implements IWorkbenchPreferencePage, IPreferenceConstants {
     private void performGeneralDefaults() {
         fGridSizeSpinner.setSelection(getPreferenceStore().getDefaultInt(GRID_SIZE));
 
-        fDoAnimationButton.setSelection(getPreferenceStore().getDefaultBoolean(ANIMATE));
-        fAnimationSpeedSpinner.setSelection(getPreferenceStore().getDefaultInt(ANIMATION_SPEED));
-        
         fPaletteStateButton.setSelection(getPreferenceStore().getDefaultBoolean(PALETTE_STATE));
         fViewTooltipsButton.setSelection(getPreferenceStore().getDefaultBoolean(VIEW_TOOLTIPS));
         
@@ -281,12 +302,20 @@ implements IWorkbenchPreferencePage, IPreferenceConstants {
         fViewpointsHidePaletteElementsButton.setSelection(getPreferenceStore().getDefaultBoolean(VIEWPOINTS_HIDE_PALETTE_ELEMENTS));
         fViewpointsHideMagicConnectorElementsButton.setSelection(getPreferenceStore().getDefaultBoolean(VIEWPOINTS_HIDE_MAGIC_CONNECTOR_ELEMENTS));
         
-        fViewpointsGhostDiagramElementsButton.setSelection(!getPreferenceStore().getDefaultBoolean(VIEWPOINTS_HIDE_DIAGRAM_ELEMENTS));
-        fViewpointsHideDiagramElementsButton.setSelection(getPreferenceStore().getDefaultBoolean(VIEWPOINTS_HIDE_DIAGRAM_ELEMENTS));
+        fViewpointsGhostDiagramElementsButton.setSelection(getPreferenceStore().getDefaultBoolean(VIEWPOINTS_GHOST_DIAGRAM_ELEMENTS));
         
         fEditNameOnNewObjectButton.setSelection(getPreferenceStore().getDefaultBoolean(EDIT_NAME_ON_NEW_OBJECT));
+        
+        for(int i = 0; i < fPasteSpecialButtons.length; i++) {
+        	fPasteSpecialButtons[i].setSelection(getPreferenceStore().getDefaultInt(DIAGRAM_PASTE_SPECIAL_BEHAVIOR) == i);
+        }
+        
+        for(int i = 0; i < fResizeBehaviourButtons.length; i++) {
+            fResizeBehaviourButtons[i].setSelection(getPreferenceStore().getDefaultInt(DIAGRAM_OBJECT_RESIZE_BEHAVIOUR) == i);
+        }
     }
 
+    @Override
     public void init(IWorkbench workbench) {
     }
     

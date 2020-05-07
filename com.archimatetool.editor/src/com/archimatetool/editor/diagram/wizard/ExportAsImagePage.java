@@ -39,7 +39,7 @@ import com.archimatetool.editor.diagram.IImageExportProvider.IExportDialogAdapte
 import com.archimatetool.editor.diagram.ImageExportProviderManager;
 import com.archimatetool.editor.diagram.ImageExportProviderManager.ImageExportProviderInfo;
 import com.archimatetool.editor.preferences.Preferences;
-import com.archimatetool.editor.ui.IArchimateImages;
+import com.archimatetool.editor.ui.IArchiImages;
 import com.archimatetool.editor.ui.UIUtils;
 import com.archimatetool.editor.utils.StringUtils;
 
@@ -93,7 +93,7 @@ public class ExportAsImagePage extends WizardPage {
     };
     
     private static final String PREFS_LAST_PROVIDER = "ExportImageLastProvider"; //$NON-NLS-1$
-    private static final String PREFS_LAST_FILE = "ExportImageLastFile"; //$NON-NLS-1$
+    private static final String PREFS_LAST_FOLDER = "ExportImageLastFolder"; //$NON-NLS-1$
     
     public ExportAsImagePage(IFigure figure, String name) {
         super("ExportAsImagePage"); //$NON-NLS-1$
@@ -101,9 +101,14 @@ public class ExportAsImagePage extends WizardPage {
         fFigure = figure;
         fName = name;
         
+        // Safe name so never null or blank
+        if(!StringUtils.isSet(fName)) {
+            fName = "Image"; //$NON-NLS-1$
+        }
+        
         setTitle(Messages.ExportAsImagePage_0);
         setDescription(Messages.ExportAsImagePage_1);
-        setImageDescriptor(IArchimateImages.ImageFactory.getImageDescriptor(IArchimateImages.ECLIPSE_IMAGE_EXPORT_DIR_WIZARD));
+        setImageDescriptor(IArchiImages.ImageFactory.getImageDescriptor(IArchiImages.ECLIPSE_IMAGE_EXPORT_DIR_WIZARD));
     }
 
     @Override
@@ -122,32 +127,21 @@ public class ExportAsImagePage extends WizardPage {
         Label label = new Label(exportGroup, SWT.NULL);
         label.setText(Messages.ExportAsImagePage_3);
         
-        fFileTextField = new Text(exportGroup, SWT.BORDER | SWT.SINGLE);
+        fFileTextField = UIUtils.createSingleTextControl(exportGroup, SWT.BORDER, false);
         fFileTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         
-        // Get last file name used
-        String lastFileName = Preferences.STORE.getString(PREFS_LAST_FILE);
-        if(StringUtils.isSet(lastFileName)) {
-            // If we have a given name use that
-            if(fName != null) {
-                File file = new File(lastFileName);
-                File path = file.getParentFile();
-                if(path != null) {
-                    lastFileName = new File(path, fName).getPath();
-                }
-            }
-            
-            fFileTextField.setText(lastFileName);
+        // Get last folder
+        String lastFolder = Preferences.STORE.getString(PREFS_LAST_FOLDER);
+        if(StringUtils.isSet(lastFolder)) {
+            File file = new File(lastFolder);
+            fFileTextField.setText(new File(file, fName).getAbsolutePath());
         }
         else {
-            String name = (fName == null) ? "exported" : fName; //$NON-NLS-1$
-            fFileTextField.setText(new File(System.getProperty("user.home"), name).getPath()); //$NON-NLS-1$
+            fFileTextField.setText(new File(System.getProperty("user.home"), fName).getAbsolutePath()); //$NON-NLS-1$
         }
         
-        // Single text control so strip CRLFs
-        UIUtils.conformSingleTextControl(fFileTextField);
-        
         fFileTextField.addModifyListener(new ModifyListener() {
+            @Override
             public void modifyText(ModifyEvent e) {
                 validateFields();
             }
@@ -242,10 +236,20 @@ public class ExportAsImagePage extends WizardPage {
             // Be nice and add a default extension to the file name
             String filename = fFileTextField.getText();
             if(filename.length() > 0) {
-                int dot = filename.lastIndexOf('.');
-                if(dot != -1) {
-                    filename = filename.substring(0, dot);
+                // Remove any known extensions so we can add a new one
+                // But we don't want to remove any dots or extension strings that might be in the file name itself
+                for(ImageExportProviderInfo info : fImageProviders) {
+                    for(String ext : info.getExtensions()) {
+                        if(filename.toLowerCase().endsWith("." + ext) ) { // ensure this is at the end //$NON-NLS-1$
+                            int index = filename.toLowerCase().lastIndexOf("." + ext); //$NON-NLS-1$
+                            if(index != -1) {
+                                filename = filename.substring(0, index);
+                                break;
+                            }
+                        }
+                    }
                 }
+                
                 fFileTextField.setText(filename + "." + fSelectedProvider.getExtensions().get(0)); //$NON-NLS-1$
             }
             
@@ -340,7 +344,12 @@ public class ExportAsImagePage extends WizardPage {
     }
 
     void storePreferences() {
-        Preferences.STORE.setValue(PREFS_LAST_FILE, getFileName());
+        // Store current folder
+        File parentFile = new File(getFileName()).getAbsoluteFile().getParentFile(); // Make sure to use absolute file
+        if(parentFile != null) {
+            Preferences.STORE.setValue(PREFS_LAST_FOLDER, parentFile.getAbsolutePath());
+        }
+        
         if(fSelectedProvider != null) {
             Preferences.STORE.setValue(PREFS_LAST_PROVIDER, fSelectedProvider.getID());
         }

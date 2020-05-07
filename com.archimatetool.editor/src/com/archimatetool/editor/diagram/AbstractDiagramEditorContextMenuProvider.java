@@ -16,6 +16,7 @@ import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.ui.actions.ActionFactory;
 
+import com.archimatetool.editor.actions.ArchiActionFactory;
 import com.archimatetool.editor.diagram.actions.BringForwardAction;
 import com.archimatetool.editor.diagram.actions.BringToFrontAction;
 import com.archimatetool.editor.diagram.actions.ConnectionRouterAction;
@@ -25,7 +26,6 @@ import com.archimatetool.editor.diagram.actions.ExportAsImageToClipboardAction;
 import com.archimatetool.editor.diagram.actions.LockObjectAction;
 import com.archimatetool.editor.diagram.actions.SendBackwardAction;
 import com.archimatetool.editor.diagram.actions.SendToBackAction;
-import com.archimatetool.editor.utils.PlatformUtils;
 
 
 /**
@@ -81,7 +81,13 @@ public abstract class AbstractDiagramEditorContextMenuProvider extends ContextMe
         action = actionRegistry.getAction(ActionFactory.COPY.getId());
         menu.appendToGroup(GROUP_EDIT, action);
         
+        action = actionRegistry.getAction(ExportAsImageToClipboardAction.ID);
+        menu.appendToGroup(GROUP_EDIT, action);
+
         action = actionRegistry.getAction(ActionFactory.PASTE.getId());
+        menu.appendToGroup(GROUP_EDIT, action);
+        
+        action = actionRegistry.getAction(ArchiActionFactory.PASTE_SPECIAL.getId());
         menu.appendToGroup(GROUP_EDIT, action);
         
         action = actionRegistry.getAction(ActionFactory.DELETE.getId());
@@ -102,11 +108,6 @@ public abstract class AbstractDiagramEditorContextMenuProvider extends ContextMe
         IMenuManager exportMenu = new MenuManager(Messages.AbstractDiagramEditorContextMenuProvider_0, "menu_export"); //$NON-NLS-1$
         menu.add(exportMenu);
         exportMenu.add(actionRegistry.getAction(ExportAsImageAction.ID));
-        
-        // TODO Export As Image to Clipboard. But not on Linux 64-bit. See https://bugs.eclipse.org/bugs/show_bug.cgi?id=283960
-        if(!(PlatformUtils.isLinux() && PlatformUtils.is64Bit())) {
-            exportMenu.add(actionRegistry.getAction(ExportAsImageToClipboardAction.ID));
-        }
         
         menu.add(new Separator(GROUP_ORDER));
         IMenuManager orderMenu = new MenuManager(Messages.AbstractDiagramEditorContextMenuProvider_1, "menu_order"); //$NON-NLS-1$
@@ -142,7 +143,8 @@ public abstract class AbstractDiagramEditorContextMenuProvider extends ContextMe
         IMenuManager connectionMenu = new MenuManager(Messages.AbstractDiagramEditorContextMenuProvider_3, "menu_connection_router"); //$NON-NLS-1$
         menu.appendToGroup(GROUP_CONNECTIONS, connectionMenu);
         connectionMenu.add(actionRegistry.getAction(ConnectionRouterAction.BendPointConnectionRouterAction.ID));
-        connectionMenu.add(actionRegistry.getAction(ConnectionRouterAction.ShortestPathConnectionRouterAction.ID));
+// Doesn't work with Connection to Connection
+//      connectionMenu.add(actionRegistry.getAction(ConnectionRouterAction.ShortestPathConnectionRouterAction.ID));
         connectionMenu.add(actionRegistry.getAction(ConnectionRouterAction.ManhattanConnectionRouterAction.ID));
         
         menu.add(new Separator(GROUP_PROPERTIES));

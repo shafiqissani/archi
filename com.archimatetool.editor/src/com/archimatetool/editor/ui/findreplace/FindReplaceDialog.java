@@ -32,7 +32,7 @@ import org.eclipse.ui.IPartListener;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchWindow;
 
-import com.archimatetool.editor.ArchimateEditorPlugin;
+import com.archimatetool.editor.ArchiPlugin;
 import com.archimatetool.editor.utils.StringUtils;
 
 
@@ -81,6 +81,7 @@ public class FindReplaceDialog extends Dialog implements IPartListener, IDialogC
     private Listener eventHandler = new EventHandler();
 
     private class EventHandler implements Listener {
+        @Override
         public void handleEvent(Event event) {
             if(event.type == SWT.Modify) {
                 updateOperationButtons();
@@ -121,16 +122,23 @@ public class FindReplaceDialog extends Dialog implements IPartListener, IDialogC
         super(window.getShell());
         
         this.window = window;
-        setShellStyle(SWT.TITLE | SWT.MODELESS | SWT.CLOSE);
+
+        setShellStyle(SWT.TITLE | SWT.MODELESS | SWT.CLOSE | SWT.RESIZE);
         
         SINGLETONS.put(window, this);
         
         window.getShell().addDisposeListener(new DisposeListener() {
+            @Override
             public void widgetDisposed(DisposeEvent e) {
                 close();
                 SINGLETONS.remove(window);
             }
         });
+    }
+    
+    @Override
+    protected boolean isResizable() {
+        return true;
     }
     
     @Override
@@ -149,6 +157,7 @@ public class FindReplaceDialog extends Dialog implements IPartListener, IDialogC
         startListeningToPartChanges();
         
         newShell.addDisposeListener(new DisposeListener() {
+            @Override
             public void widgetDisposed(DisposeEvent e) {
                 saveParameter();
                 stopListeningToPartChanges();
@@ -236,11 +245,11 @@ public class FindReplaceDialog extends Dialog implements IPartListener, IDialogC
     private Combo createInputWidget(Composite parent, String label, List<String> history) {
         Label labelWidget = new Label(parent, SWT.NONE);
         labelWidget.setText(label);
-        labelWidget.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, true));
+        labelWidget.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, true));
 
         final Combo input = new Combo(parent, SWT.SINGLE | SWT.BORDER | SWT.DROP_DOWN);
         GridData layoutData = new GridData(SWT.FILL, SWT.CENTER, true, true);
-        layoutData.widthHint = 120;
+        layoutData.widthHint = 200;
         input.setLayoutData(layoutData);
         
         for(String t : history) {
@@ -289,6 +298,7 @@ public class FindReplaceDialog extends Dialog implements IPartListener, IDialogC
     private void registerOperationButton(final int id, final Button widget) {
         opButtons.put(Integer.valueOf(id), widget);
         widget.addDisposeListener(new DisposeListener() {
+            @Override
             public void widgetDisposed(DisposeEvent e) {
                 unregisterOperationButton(id, widget);
             }
@@ -464,11 +474,11 @@ public class FindReplaceDialog extends Dialog implements IPartListener, IDialogC
     
     @Override
     protected int getDialogBoundsStrategy() {
-        return DIALOG_PERSISTLOCATION;
+        return DIALOG_PERSISTLOCATION | DIALOG_PERSISTSIZE;
     }
     
     protected IDialogSettings getDialogSettings(String sectionName) {
-        IDialogSettings settings = ArchimateEditorPlugin.INSTANCE.getDialogSettings();
+        IDialogSettings settings = ArchiPlugin.INSTANCE.getDialogSettings();
         IDialogSettings section = settings.getSection(sectionName);
         if(section == null) {
             section = settings.addNewSection(sectionName);
@@ -553,6 +563,7 @@ public class FindReplaceDialog extends Dialog implements IPartListener, IDialogC
         widgets.add(widget);
         paramWidgets.put(key, widgets);
         widget.addDisposeListener(new DisposeListener() {
+            @Override
             public void widgetDisposed(DisposeEvent e) {
                 removeParameterWidget(paramId, widget);
             }
@@ -603,6 +614,7 @@ public class FindReplaceDialog extends Dialog implements IPartListener, IDialogC
 
     // =============================== Part Listener ====================================
 
+    @Override
     public void partActivated(IWorkbenchPart part) {
         currentPart = part;
         setOperationProvider(getOperationProvider(part));
@@ -610,6 +622,7 @@ public class FindReplaceDialog extends Dialog implements IPartListener, IDialogC
         updateParameterWidgets();
     }
 
+    @Override
     public void partClosed(IWorkbenchPart part) {
         if(part != currentPart) {
             return;
@@ -620,12 +633,15 @@ public class FindReplaceDialog extends Dialog implements IPartListener, IDialogC
         updateParameterWidgets();
     }
 
+    @Override
     public void partBroughtToTop(IWorkbenchPart part) {
     }
 
+    @Override
     public void partDeactivated(IWorkbenchPart part) {
     }
 
+    @Override
     public void partOpened(IWorkbenchPart part) {
     }
     
@@ -641,7 +657,7 @@ public class FindReplaceDialog extends Dialog implements IPartListener, IDialogC
         if(part == null) {
             return null;
         }
-        return (IFindReplaceProvider)part.getAdapter(IFindReplaceProvider.class);
+        return part.getAdapter(IFindReplaceProvider.class);
     }
     
     protected void setOperationProvider(IFindReplaceProvider operationProvider) {

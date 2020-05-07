@@ -5,14 +5,10 @@
  */
 package com.archimatetool.editor.diagram.figures.diagram;
 
-import org.eclipse.draw2d.ColorConstants;
-import org.eclipse.draw2d.CompoundBorder;
 import org.eclipse.draw2d.Graphics;
+import org.eclipse.draw2d.GridData;
+import org.eclipse.draw2d.GridLayout;
 import org.eclipse.draw2d.IFigure;
-import org.eclipse.draw2d.LineBorder;
-import org.eclipse.draw2d.MarginBorder;
-import org.eclipse.draw2d.ToolbarLayout;
-import org.eclipse.draw2d.geometry.Insets;
 import org.eclipse.draw2d.geometry.PointList;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.draw2d.text.BlockFlow;
@@ -20,12 +16,15 @@ import org.eclipse.draw2d.text.FlowPage;
 import org.eclipse.draw2d.text.ParagraphTextLayout;
 import org.eclipse.draw2d.text.TextFlow;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Pattern;
 
 import com.archimatetool.editor.diagram.figures.AbstractDiagramModelObjectFigure;
-import com.archimatetool.editor.preferences.IPreferenceConstants;
-import com.archimatetool.editor.preferences.Preferences;
+import com.archimatetool.editor.diagram.figures.FigureUtils;
+import com.archimatetool.editor.diagram.figures.TextPositionDelegate;
+import com.archimatetool.editor.diagram.figures.FigureUtils.Direction;
 import com.archimatetool.editor.utils.StringUtils;
 import com.archimatetool.model.IDiagramModelNote;
+import com.archimatetool.model.IDiagramModelObject;
 
 
 /**
@@ -33,10 +32,11 @@ import com.archimatetool.model.IDiagramModelNote;
  * 
  * @author Phillip Beauvoir
  */
-public class NoteFigure
-extends AbstractDiagramModelObjectFigure {
+public class NoteFigure extends AbstractDiagramModelObjectFigure {
     
     private TextFlow fTextFlow;
+    
+    private TextPositionDelegate fTextPositionDelegate;
     
     public NoteFigure(IDiagramModelNote diagramModelNote) {
         super(diagramModelNote);
@@ -49,48 +49,7 @@ extends AbstractDiagramModelObjectFigure {
     
     @Override
     protected void setUI() {
-        setBorder(new CompoundBorder(new LineBorder() {
-            @Override
-            public void paint(IFigure figure, Graphics graphics, Insets insets) {
-                if(getDiagramModelObject().getBorderType() == IDiagramModelNote.BORDER_NONE) {
-                    return; 
-                }
-                
-                tempRect.setBounds(getPaintRectangle(figure, insets));
-                if(getWidth() % 2 == 1) {
-                    tempRect.width--;
-                    tempRect.height--;
-                }
-                tempRect.shrink(getWidth() / 2, getWidth() / 2);
-                graphics.setLineWidth(getWidth());
-                
-                graphics.setForegroundColor(getLineColor());
-
-                boolean drawShadows = Preferences.STORE.getBoolean(IPreferenceConstants.SHOW_SHADOWS);
-                int shadow_offset = drawShadows ? 2 : 0;
-                
-                PointList list = new PointList();
-                
-                if(getDiagramModelObject().getBorderType() == IDiagramModelNote.BORDER_DOGEAR) {
-                    list.addPoint(tempRect.x, tempRect.y);
-                    list.addPoint(tempRect.x + tempRect.width - shadow_offset, tempRect.y);
-                    list.addPoint(tempRect.x + tempRect.width - shadow_offset, tempRect.y + tempRect.height - 12);
-                    list.addPoint(tempRect.x + tempRect.width - 12, tempRect.y + tempRect.height - shadow_offset);
-                    list.addPoint(tempRect.x, tempRect.y + tempRect.height - shadow_offset);
-                }
-                else if(getDiagramModelObject().getBorderType() == IDiagramModelNote.BORDER_RECTANGLE) {
-                    list.addPoint(tempRect.x, tempRect.y);
-                    list.addPoint(tempRect.x + tempRect.width - shadow_offset, tempRect.y);
-                    list.addPoint(tempRect.x + tempRect.width - shadow_offset, tempRect.y + tempRect.height - shadow_offset);
-                    list.addPoint(tempRect.x, tempRect.y + tempRect.height - shadow_offset);
-                }
-                
-                graphics.drawPolygon(list);
-            }
-        }, new MarginBorder(3)));
-        
-        ToolbarLayout layout = new ToolbarLayout();
-        setLayoutManager(layout);
+        setLayoutManager(new GridLayout());
 
         FlowPage page = new FlowPage();
         BlockFlow block = new BlockFlow();
@@ -99,9 +58,14 @@ extends AbstractDiagramModelObjectFigure {
         block.add(fTextFlow);
         page.add(block);
         setOpaque(true);
-        add(page);
+        
+        GridData gd = new GridData(SWT.LEFT, SWT.TOP, true, true);
+        add(page, gd);
+        
+        fTextPositionDelegate = new TextPositionDelegate(this, page, getDiagramModelObject());
     }
     
+    @Override
     public void refreshVisuals() {
         // Text
         setText(getDiagramModelObject().getContent());
@@ -120,8 +84,9 @@ extends AbstractDiagramModelObjectFigure {
 
         // Alignment
         ((BlockFlow)fTextFlow.getParent()).setHorizontalAligment(getDiagramModelObject().getTextAlignment());
+        fTextPositionDelegate.updateTextPosition();
         
-        // Repaint for border
+        // Repaint
         repaint();
     }
     
@@ -136,55 +101,49 @@ extends AbstractDiagramModelObjectFigure {
 
     @Override
     protected void paintFigure(Graphics graphics) {
-        graphics.setAntialias(SWT.ON);
+        graphics.pushState();
         
-        boolean drawShadows = Preferences.STORE.getBoolean(IPreferenceConstants.SHOW_SHADOWS);
-        int shadow_offset = drawShadows ? 3 : 0;
-        
-        Rectangle tempRect = getBounds().getCopy();
-        
-        // Shadows
-        if(drawShadows) {
-            graphics.setAlpha(100);
-            graphics.setBackgroundColor(ColorConstants.black);
-            PointList shadowPoints = new PointList();
-            
-            if(getDiagramModelObject().getBorderType() == IDiagramModelNote.BORDER_DOGEAR) {
-                shadowPoints.addPoint(tempRect.x + 2, tempRect.y + 2);
-                shadowPoints.addPoint(tempRect.x + tempRect.width, tempRect.y + 2);
-                shadowPoints.addPoint(tempRect.x + tempRect.width, tempRect.y + tempRect.height - 12);
-                shadowPoints.addPoint(tempRect.x + tempRect.width - 12, tempRect.y + tempRect.height);
-                shadowPoints.addPoint(tempRect.x + 2, tempRect.y + tempRect.height);
-            }
-            else if(getDiagramModelObject().getBorderType() == IDiagramModelNote.BORDER_RECTANGLE) {
-                shadowPoints.addPoint(tempRect.x + 2, tempRect.y + 2);
-                shadowPoints.addPoint(tempRect.x + tempRect.width, tempRect.y + 2);
-                shadowPoints.addPoint(tempRect.x + tempRect.width, tempRect.y + tempRect.height);
-                shadowPoints.addPoint(tempRect.x + 2, tempRect.y + tempRect.height);
-            }
-
-            graphics.fillPolygon(shadowPoints);
-        }
+        Rectangle bounds = getBounds().getCopy();
         
         // Fill
-        PointList fillPoints = new PointList();
+        PointList points = new PointList();
         
         if(getDiagramModelObject().getBorderType() == IDiagramModelNote.BORDER_DOGEAR) {
-            fillPoints.addPoint(tempRect.x, tempRect.y);
-            fillPoints.addPoint(tempRect.x + tempRect.width - shadow_offset, tempRect.y);
-            fillPoints.addPoint(tempRect.x + tempRect.width - shadow_offset, tempRect.y + tempRect.height - 13);
-            fillPoints.addPoint(tempRect.x + tempRect.width - 13, tempRect.y + tempRect.height - shadow_offset);
-            fillPoints.addPoint(tempRect.x, tempRect.y + tempRect.height - shadow_offset);
+            points.addPoint(bounds.x, bounds.y);
+            points.addPoint(bounds.getTopRight().x - 1, bounds.y);
+            points.addPoint(bounds.getTopRight().x - 1, bounds.getBottomRight().y - 13);
+            points.addPoint(bounds.getTopRight().x - 13, bounds.getBottomRight().y - 1);
+            points.addPoint(bounds.x, bounds.getBottomLeft().y - 1);
         }
         else {
-            fillPoints.addPoint(tempRect.x, tempRect.y);
-            fillPoints.addPoint(tempRect.x + tempRect.width - shadow_offset, tempRect.y);
-            fillPoints.addPoint(tempRect.x + tempRect.width - shadow_offset, tempRect.y + tempRect.height - shadow_offset);
-            fillPoints.addPoint(tempRect.x, tempRect.y + tempRect.height - shadow_offset);
+            points.addPoint(bounds.x, bounds.y);
+            points.addPoint(bounds.getTopRight().x - 1, bounds.y);
+            points.addPoint(bounds.getTopRight().x - 1, bounds.getBottomRight().y - 1);
+            points.addPoint(bounds.x, bounds.getBottomLeft().y - 1);
         }
         
-        graphics.setAlpha(255);
+        graphics.setAlpha(getAlpha());
+        
         graphics.setBackgroundColor(getFillColor());
-        graphics.fillPolygon(fillPoints);
+        
+        Pattern gradient = null;
+        if(getGradient() != IDiagramModelObject.GRADIENT_NONE) {
+            gradient = FigureUtils.createGradient(graphics, bounds, getFillColor(), getAlpha(), Direction.get(getGradient()));
+            graphics.setBackgroundPattern(gradient);
+        }
+        
+        graphics.fillPolygon(points);
+        
+        if(gradient != null) {
+            gradient.dispose();
+        }
+
+        if(getDiagramModelObject().getBorderType() != IDiagramModelNote.BORDER_NONE) {
+            graphics.setAlpha(getLineAlpha());
+            graphics.setForegroundColor(getLineColor());
+            graphics.drawPolygon(points);
+        }
+        
+        graphics.popState();
     }
 }

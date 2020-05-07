@@ -5,15 +5,13 @@
  */
 package com.archimatetool.editor.diagram.figures;
 
-import junit.framework.TestSuite;
-
 import com.archimatetool.editor.diagram.figures.diagram.DiagramImageFigureTests;
 import com.archimatetool.editor.diagram.figures.diagram.DiagramModelReferenceFigureTests;
 import com.archimatetool.editor.diagram.figures.diagram.GroupFigureTests;
 import com.archimatetool.editor.diagram.figures.diagram.NoteFigureTests;
-import com.archimatetool.editor.diagram.figures.junctions.AndJunctionFigureTests;
-import com.archimatetool.editor.diagram.figures.junctions.JunctionFigureTests;
-import com.archimatetool.editor.diagram.figures.junctions.OrJunctionFigureTests;
+import com.archimatetool.editor.diagram.figures.elements.JunctionFigureTests;
+
+import junit.framework.TestSuite;
 
 @SuppressWarnings("nls")
 public class AllFiguresTests {
@@ -22,7 +20,7 @@ public class AllFiguresTests {
 		TestSuite suite = new TestSuite("com.archimatetool.editor.diagram.figures");
 		
         // figures
-        suite.addTest(AllArchimateTypeFigureTests.suite());
+        suite.addTest(AllArchimateTextControlContainerFigureTests.suite());
         
         // figures.diagram
         suite.addTest(DiagramImageFigureTests.suite());
@@ -30,10 +28,8 @@ public class AllFiguresTests {
         suite.addTest(GroupFigureTests.suite());
         suite.addTest(NoteFigureTests.suite());
 
-        // figures.junctions
+        // figures.elements
         suite.addTest(JunctionFigureTests.suite());
-        suite.addTest(OrJunctionFigureTests.suite());
-        suite.addTest(AndJunctionFigureTests.suite());
 
 
         return suite;

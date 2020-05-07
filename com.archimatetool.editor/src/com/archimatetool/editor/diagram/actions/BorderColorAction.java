@@ -12,13 +12,13 @@ import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.commands.CompoundCommand;
 import org.eclipse.gef.ui.actions.SelectionAction;
 import org.eclipse.swt.graphics.RGB;
-import org.eclipse.swt.widgets.ColorDialog;
 import org.eclipse.ui.IWorkbenchPart;
 
 import com.archimatetool.editor.diagram.commands.BorderColorCommand;
 import com.archimatetool.editor.ui.ColorFactory;
-import com.archimatetool.editor.ui.factory.ElementUIFactory;
-import com.archimatetool.editor.ui.factory.IElementUIProvider;
+import com.archimatetool.editor.ui.components.CustomColorDialog;
+import com.archimatetool.editor.ui.factory.IObjectUIProvider;
+import com.archimatetool.editor.ui.factory.ObjectUIFactory;
 import com.archimatetool.model.IArchimatePackage;
 import com.archimatetool.model.IBorderObject;
 import com.archimatetool.model.ILockable;
@@ -68,7 +68,7 @@ public class BorderColorAction extends SelectionAction {
             return;
         }
         
-        ColorDialog colorDialog = new ColorDialog(getWorkbenchPart().getSite().getShell());
+        CustomColorDialog colorDialog = new CustomColorDialog(getWorkbenchPart().getSite().getShell());
         
         // Set default RGB on first selected object
         RGB defaultRGB = null;
@@ -115,8 +115,8 @@ public class BorderColorAction extends SelectionAction {
         }
         
         if(model instanceof IBorderObject) {
-            IElementUIProvider provider = ElementUIFactory.INSTANCE.getProvider(((IBorderObject)model));
-            return provider != null && provider.shouldExposeFeature((IBorderObject)model, IArchimatePackage.Literals.BORDER_OBJECT__BORDER_COLOR);
+            IObjectUIProvider provider = ObjectUIFactory.INSTANCE.getProvider(((IBorderObject)model));
+            return provider != null && provider.shouldExposeFeature(IArchimatePackage.Literals.BORDER_OBJECT__BORDER_COLOR.getName());
         }
         
         return false;

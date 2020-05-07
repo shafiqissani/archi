@@ -8,11 +8,9 @@ package com.archimatetool.canvas.editparts;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import junit.framework.JUnit4TestAdapter;
 
 import org.eclipse.gef.EditPart;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.archimatetool.canvas.model.ICanvasFactory;
@@ -20,13 +18,15 @@ import com.archimatetool.canvas.model.ICanvasModel;
 import com.archimatetool.canvas.model.ICanvasModelBlock;
 import com.archimatetool.canvas.model.ICanvasModelSticky;
 import com.archimatetool.editor.Logger;
+import com.archimatetool.editor.diagram.editparts.DiagramConnectionEditPart;
 import com.archimatetool.editor.diagram.editparts.diagram.DiagramImageEditPart;
 import com.archimatetool.editor.diagram.editparts.diagram.EmptyEditPart;
 import com.archimatetool.model.IArchimateFactory;
 import com.archimatetool.model.IDiagramModelConnection;
 import com.archimatetool.model.IDiagramModelImage;
 import com.archimatetool.model.IDiagramModelReference;
-import com.archimatetool.tests.TestUtils;
+
+import junit.framework.JUnit4TestAdapter;
 
 
 public class CanvasModelEditPartFactoryTests {
@@ -35,12 +35,6 @@ public class CanvasModelEditPartFactoryTests {
     
     public static junit.framework.Test suite() {
         return new JUnit4TestAdapter(CanvasModelEditPartFactoryTests.class);
-    }
-    
-    @BeforeClass
-    public static void runOnceBeforeAllTests() {
-        // Need this
-        TestUtils.ensureDefaultDisplay();
     }
     
     @Before
@@ -104,7 +98,7 @@ public class CanvasModelEditPartFactoryTests {
         IDiagramModelConnection conn = ICanvasFactory.eINSTANCE.createCanvasModelConnection();
         
         EditPart editPart = editPartFactory.createEditPart(null, conn);
-        assertTrue(editPart instanceof CanvasLineConnectionEditPart);
+        assertTrue(editPart instanceof DiagramConnectionEditPart);
         assertEquals(conn, editPart.getModel());
     }
 }

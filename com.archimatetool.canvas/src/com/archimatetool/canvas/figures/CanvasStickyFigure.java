@@ -19,6 +19,7 @@ import org.eclipse.swt.graphics.Color;
 
 import com.archimatetool.canvas.model.ICanvasModelSticky;
 import com.archimatetool.editor.diagram.figures.AbstractDiagramModelObjectFigure;
+import com.archimatetool.editor.diagram.figures.TextPositionDelegate;
 import com.archimatetool.editor.preferences.Preferences;
 import com.archimatetool.editor.ui.ColorFactory;
 import com.archimatetool.editor.utils.StringUtils;
@@ -65,6 +66,7 @@ extends AbstractDiagramModelObjectFigure {
         fIconicDelegate.updateImage();
     }
     
+    @Override
     public void refreshVisuals() {
         // Text
         setText();
@@ -86,6 +88,9 @@ extends AbstractDiagramModelObjectFigure {
         
         // Text Position
         fTextPositionDelegate.updateTextPosition();
+        
+        // Repaint
+        repaint();
     }
     
     public void updateImage() {
@@ -98,6 +103,7 @@ extends AbstractDiagramModelObjectFigure {
         getTextControl().setText(StringUtils.safeString(text));
     }
 
+    @Override
     public TextFlow getTextControl() {
         return fTextFlow;
     }
@@ -122,6 +128,8 @@ extends AbstractDiagramModelObjectFigure {
     protected void paintFigure(Graphics graphics) {
         graphics.setAntialias(SWT.ON);
         
+        graphics.setAlpha(getAlpha());
+        
         Rectangle bounds = getBounds().getCopy();
         
         graphics.setForegroundColor(getFillColor());
@@ -130,6 +138,8 @@ extends AbstractDiagramModelObjectFigure {
         
         // Border
         if(getBorderColor() != null) {
+            graphics.setAlpha(getLineAlpha());
+            
             graphics.setForegroundColor(ColorFactory.getLighterColor(getBorderColor(), 0.82f));
             graphics.drawLine(bounds.x, bounds.y, bounds.x + bounds.width - 1, bounds.y);
             graphics.drawLine(bounds.x + bounds.width - 1, bounds.y, bounds.x + bounds.width - 1, bounds.y + bounds.height - 1);

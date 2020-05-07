@@ -7,7 +7,7 @@
             class="com.archimatetool.canvas.CanvasEditor"
             contributorClass="com.archimatetool.canvas.CanvasEditorActionBarContributor"
             default="false"
-            icon="img/canvas-16.png"
+            icon="img/canvas.png"
             id="com.archimatetool.canvas.canvasEditor"
             name="%editorCanvas">
       </editor>
@@ -110,27 +110,27 @@
    <extension
          point="com.archimatetool.help.hints">
       <hint
-            class="com.archimatetool.canvas.model.ICanvasModel"
+            className="CanvasModel"
             file="help/hints/canvas_diagram.html"
             title="%hint.title">
       </hint>
       <hint
-            class="com.archimatetool.canvas.model.ICanvasModelBlock"
+            className="CanvasModelBlock"
             file="help/hints/canvas_block.html"
             title="%hint.title.0">
       </hint>
       <hint
-            class="com.archimatetool.canvas.model.ICanvasModelImage"
+            className="CanvasModelImage"
             file="help/hints/canvas_image.html"
             title="%hint.title.1">
       </hint>
       <hint
-            class="com.archimatetool.canvas.model.ICanvasModelSticky"
+            className="CanvasModelSticky"
             file="help/hints/canvas_sticky.html"
             title="%hint.title.2">
       </hint>
       <hint
-            class="com.archimatetool.canvas.model.ICanvasModelConnection"
+            className="CanvasModelConnection"
             file="help/hints/canvas_connection.html"
             title="%hint.title.3">
       </hint>
@@ -150,7 +150,7 @@
       </initializer>
    </extension>
    <extension
-         point="com.archimatetool.editor.elementUIProvider">
+         point="com.archimatetool.editor.objectUIProvider">
       <uiProvider
             class="com.archimatetool.canvas.factory.CanvasModelUIProvider"
             id="com.archimatetool.canvas.CanvasModelUIProvider">
@@ -168,7 +168,7 @@
             id="com.archimatetool.canvas.CanvasImageUIProvider">
       </uiProvider>
       <uiProvider
-            class="com.archimatetool.canvas.factory.CanvasLineConnectionUIProvider"
+            class="com.archimatetool.canvas.factory.CanvasConnectionUIProvider"
             id="com.archimatetool.canvas.CanvasLineConnectionUIProvider">
       </uiProvider>
    </extension>

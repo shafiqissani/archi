@@ -5,8 +5,6 @@
  */
 package com.archimatetool.editor.propertysections;
 
-import org.eclipse.emf.common.notify.Adapter;
-import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.DoubleClickEvent;
@@ -17,18 +15,19 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.viewers.ViewerSorter;
+import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.PlatformUI;
 
-import com.archimatetool.editor.diagram.IArchimateDiagramEditor;
 import com.archimatetool.editor.diagram.IDiagramModelEditor;
 import com.archimatetool.editor.model.DiagramModelUtils;
-import com.archimatetool.editor.ui.IArchimateImages;
+import com.archimatetool.editor.preferences.IPreferenceConstants;
+import com.archimatetool.editor.ui.IArchiImages;
+import com.archimatetool.editor.ui.UIUtils;
 import com.archimatetool.editor.ui.services.EditorManager;
-import com.archimatetool.model.IArchimateComponent;
+import com.archimatetool.model.IArchimateConcept;
 import com.archimatetool.model.IDiagramModel;
 
 
@@ -38,7 +37,7 @@ import com.archimatetool.model.IDiagramModel;
  * 
  * @author Phillip Beauvoir
  */
-public class UsedInViewsSection extends AbstractArchimatePropertySection {
+public class UsedInViewsSection extends AbstractECorePropertySection {
     
     private static final String HELP_ID = "com.archimatetool.help.usedInViewsSection"; //$NON-NLS-1$
     
@@ -47,17 +46,17 @@ public class UsedInViewsSection extends AbstractArchimatePropertySection {
      */
     public static class Filter extends ObjectFilter {
         @Override
-        protected boolean isRequiredType(Object object) {
-            return object instanceof IArchimateComponent;
+        public boolean isRequiredType(Object object) {
+            return object instanceof IArchimateConcept;
         }
 
         @Override
-        protected Class<?> getAdaptableType() {
-            return IArchimateComponent.class;
+        public Class<?> getAdaptableType() {
+            return IArchimateConcept.class;
         }
     }
 
-    private IArchimateComponent fArchimateComponent;
+    private IArchimateConcept fArchimateConcept;
     
     private TableViewer fTableViewer;
     
@@ -74,6 +73,9 @@ public class UsedInViewsSection extends AbstractArchimatePropertySection {
         TableColumnLayout tableLayout = (TableColumnLayout)tableComp.getLayout();
         fTableViewer = new TableViewer(tableComp, SWT.BORDER | SWT.FULL_SELECTION);
         
+        // Font
+        UIUtils.setFontFromPreferences(fTableViewer.getTable(), IPreferenceConstants.ANALYSIS_TABLE_FONT, true);
+
         // Column
         TableViewerColumn column = new TableViewerColumn(fTableViewer, SWT.NONE, 0);
         tableLayout.setColumnData(column.getColumn(), new ColumnWeightData(100, false));
@@ -85,14 +87,17 @@ public class UsedInViewsSection extends AbstractArchimatePropertySection {
         PlatformUI.getWorkbench().getHelpSystem().setHelp(fTableViewer.getTable(), HELP_ID);
 
         fTableViewer.setContentProvider(new IStructuredContentProvider() {
+            @Override
             public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
             }
             
+            @Override
             public void dispose() {
             }
             
+            @Override
             public Object[] getElements(Object inputElement) {
-                return DiagramModelUtils.findReferencedDiagramsForArchimateComponent((IArchimateComponent)inputElement).toArray();
+                return DiagramModelUtils.findReferencedDiagramsForArchimateConcept((IArchimateConcept)inputElement).toArray();
             }
         });
         
@@ -104,51 +109,41 @@ public class UsedInViewsSection extends AbstractArchimatePropertySection {
             
             @Override
             public Image getImage(Object element) {
-                return IArchimateImages.ImageFactory.getImage(IArchimateImages.ICON_DIAGRAM_16);
+                return IArchiImages.ImageFactory.getImage(IArchiImages.ICON_DIAGRAM);
             }
         });
         
         fTableViewer.addDoubleClickListener(new IDoubleClickListener() {
+            @Override
             public void doubleClick(DoubleClickEvent event) {
-                if(!isAlive()) {
+                if(!isAlive(fArchimateConcept)) {
                     return;
                 }
-                Object o = ((IStructuredSelection)event.getSelection()).getFirstElement();
-                if(o instanceof IDiagramModel) {
-                    IDiagramModel diagramModel = (IDiagramModel)o;
-                    IDiagramModelEditor editor = EditorManager.openDiagramEditor(diagramModel);
-                    if(editor instanceof IArchimateDiagramEditor) {
-                        ((IArchimateDiagramEditor)editor).selectArchimateComponents(new IArchimateComponent[] { fArchimateComponent });
+                IDiagramModel diagramModel = (IDiagramModel)((IStructuredSelection)event.getSelection()).getFirstElement();
+                if(diagramModel != null) {
+                    IDiagramModelEditor editor = EditorManager.openDiagramEditor(diagramModel, false);
+                    if(editor != null) {
+                        // Needs to be asyncExec to allow EditorPart to open if it is currently closed
+                        getPart().getSite().getShell().getDisplay().asyncExec(()-> { 
+                            editor.selectObjects(new Object[] { fArchimateConcept });
+                        });
                     }
                 }
             }
         });
         
-        fTableViewer.setSorter(new ViewerSorter());
+        fTableViewer.setComparator(new ViewerComparator());
     }
     
     @Override
-    protected void setElement(Object element) {
-        fArchimateComponent = (IArchimateComponent)new Filter().adaptObject(element);
-        if(fArchimateComponent == null) {
-            System.err.println("UsedInViewsSection failed to get element for " + element); //$NON-NLS-1$
-        }
-        
-        refreshControls();
-    }
-    
-    protected void refreshControls() {
-        fTableViewer.setInput(fArchimateComponent);
+    protected void update() {
+        fArchimateConcept = (IArchimateConcept)getFirstSelectedObject();
+        fTableViewer.setInput(fArchimateConcept);
     }
     
     @Override
-    protected Adapter getECoreAdapter() {
-        return null;
-    }
-
-    @Override
-    protected EObject getEObject() {
-        return fArchimateComponent;
+    protected IObjectFilter getFilter() {
+        return new Filter();
     }
     
     @Override

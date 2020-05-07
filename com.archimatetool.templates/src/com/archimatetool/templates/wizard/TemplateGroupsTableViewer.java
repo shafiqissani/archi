@@ -15,7 +15,7 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.viewers.ViewerSorter;
+import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
@@ -37,7 +37,7 @@ public class TemplateGroupsTableViewer extends TableViewer {
         setColumns();
         setContentProvider(new CategoriesTableViewerContentProvider());
         setLabelProvider(new CategoriesTableViewerLabelCellProvider());
-        setSorter(new ViewerSorter());
+        setComparator(new ViewerComparator());
     }
     
     /**
@@ -55,12 +55,15 @@ public class TemplateGroupsTableViewer extends TableViewer {
 
     class CategoriesTableViewerContentProvider implements IStructuredContentProvider {
         
+        @Override
         public void inputChanged(Viewer v, Object oldInput, Object newInput) {
         }
         
+        @Override
         public void dispose() {
         }
         
+        @Override
         public Object[] getElements(Object parent) {
             if(parent instanceof TemplateManager) {
                 List<ITemplateGroup> list = new ArrayList<ITemplateGroup>();

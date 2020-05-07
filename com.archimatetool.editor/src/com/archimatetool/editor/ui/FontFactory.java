@@ -157,4 +157,20 @@ public final class FontFactory {
 
         return font;
     }
+    
+    /**
+     * @param font
+     * @return The italic variant of the given font
+     */
+    public static Font getItalic(Font font) {
+        return FontRegistry.getItalic(font.getFontData()[0].toString());
+    }
+    
+    /**
+     * @param font
+     * @return The bold variant of the given font
+     */
+    public static Font getBold(Font font) {
+        return FontRegistry.getBold(font.getFontData()[0].toString());
+    }
 }

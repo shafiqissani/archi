@@ -17,14 +17,19 @@ public class AllTests {
 		TestSuite suite = new TestSuite("All JUnit Tests");
 		
         suite.addTest(getTest("com.archimatetool.canvas.AllTests"));
+        suite.addTest(getTest("com.archimatetool.commandline.AllTests"));
         suite.addTest(getTest("com.archimatetool.csv.AllTests"));
         suite.addTest(getTest("com.archimatetool.editor.AllTests"));
         suite.addTest(getTest("com.archimatetool.export.svg.AllTests"));
+        suite.addTest(getTest("com.archimatetool.hammer.AllTests"));
         suite.addTest(getTest("com.archimatetool.help.AllTests"));
         suite.addTest(getTest("com.archimatetool.jasperreports.AllTests"));
         suite.addTest(getTest("com.archimatetool.jdom.AllTests"));
 		suite.addTest(getTest("com.archimatetool.model.AllTests"));
+        suite.addTest(getTest("com.archimatetool.modelimporter.AllTests"));
+        suite.addTest(getTest("com.archimatetool.reports.AllTests"));
         suite.addTest(getTest("com.archimatetool.zest.AllTests"));
+        suite.addTest(getTest("org.opengroup.archimate.xmlexchange.AllTests"));
 
 		return suite;
 	}

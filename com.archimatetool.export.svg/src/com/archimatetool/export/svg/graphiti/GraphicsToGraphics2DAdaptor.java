@@ -59,6 +59,8 @@ import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.TextLayout;
 import org.eclipse.swt.widgets.Display;
 
+import com.archimatetool.editor.ui.ImageFactory;
+
 /**
  * Objects of this class can be used with draw2d to render to a Graphics2D
  * object.
@@ -195,7 +197,7 @@ public class GraphicsToGraphics2DAdaptor extends Graphics {
 
     private static final TextUtilities TEXT_UTILITIES = new TextUtilities();
 
-    private Rectangle relativeClipRegion;
+    protected Rectangle relativeClipRegion;
 
     private org.eclipse.swt.graphics.Rectangle viewBox;
     private Image image;
@@ -203,24 +205,24 @@ public class GraphicsToGraphics2DAdaptor extends Graphics {
     /**
      * x coordinate for graphics translation
      */
-    private int transX = 0;
+    protected int transX = 0;
     /**
      * y coordinate for graphics translation
      */
-    private int transY = 0;
+    protected int transY = 0;
     
     /**
      * current rotation angle 
      */
-    private float angle;
+    protected float angle;
     /**
      * The x coordinate of the rotation point
      */
-    private int rotateX;
+    protected int rotateX;
     /**
      * The y coordinate of the rotation point
      */
-    private int rotateY;
+    protected int rotateY;
 
     /**
      * Constructor
@@ -453,7 +455,7 @@ public class GraphicsToGraphics2DAdaptor extends Graphics {
             cloneGC(gc);
             layout.draw(gc, 0, 0, selectionStart, selectionEnd, selectionForeground, selectionBackground);
 
-            ImageData imageData = image.getImageData();
+            ImageData imageData = image.getImageData(ImageFactory.getImageDeviceZoom());
             imageData.transparentPixel = imageData.palette.getPixel(getBackgroundColor().getRGB());
 
             gc.dispose();
@@ -750,7 +752,7 @@ public class GraphicsToGraphics2DAdaptor extends Graphics {
             gc.setFont(getFont());
             gc.drawString(s, 0, 0);
             gc.dispose();
-            ImageData data = image.getImageData();
+            ImageData data = image.getImageData(ImageFactory.getImageDeviceZoom());
             image.dispose();
             RGB backgroundRGB = getBackgroundColor().getRGB();
             for (int i = 0; i < data.width; i++) {
@@ -1448,7 +1450,7 @@ public class GraphicsToGraphics2DAdaptor extends Graphics {
      * 
      * @return the new AWT stroke
      */
-    private Stroke createStroke() {
+    protected Stroke createStroke() {
         float factor = currentState.lineAttributes.width > 0 ? currentState.lineAttributes.width : 3;
         float awt_dash[];
         int awt_cap;

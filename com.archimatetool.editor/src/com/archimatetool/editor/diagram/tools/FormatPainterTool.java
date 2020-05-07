@@ -13,6 +13,8 @@ import org.eclipse.gef.tools.AbstractTool;
 
 import com.archimatetool.editor.diagram.commands.BorderColorCommand;
 import com.archimatetool.editor.diagram.commands.ConnectionTextPositionCommand;
+import com.archimatetool.editor.diagram.commands.DiagramModelObjectAlphaCommand;
+import com.archimatetool.editor.diagram.commands.DiagramModelObjectOutlineAlphaCommand;
 import com.archimatetool.editor.diagram.commands.FillColorCommand;
 import com.archimatetool.editor.diagram.commands.FontColorCommand;
 import com.archimatetool.editor.diagram.commands.FontStyleCommand;
@@ -21,6 +23,7 @@ import com.archimatetool.editor.diagram.commands.LineWidthCommand;
 import com.archimatetool.editor.diagram.commands.TextAlignmentCommand;
 import com.archimatetool.editor.diagram.commands.TextPositionCommand;
 import com.archimatetool.editor.diagram.tools.FormatPainterInfo.PaintFormat;
+import com.archimatetool.editor.model.commands.FeatureCommand;
 import com.archimatetool.editor.ui.ColorFactory;
 import com.archimatetool.model.IArchimateElement;
 import com.archimatetool.model.IBorderObject;
@@ -30,7 +33,7 @@ import com.archimatetool.model.IDiagramModelConnection;
 import com.archimatetool.model.IDiagramModelImage;
 import com.archimatetool.model.IDiagramModelObject;
 import com.archimatetool.model.IFontAttribute;
-import com.archimatetool.model.IJunctionElement;
+import com.archimatetool.model.IJunction;
 import com.archimatetool.model.ILineObject;
 import com.archimatetool.model.ILockable;
 import com.archimatetool.model.ITextAlignment;
@@ -175,6 +178,24 @@ public class FormatPainterTool extends AbstractTool {
             if(cmd.canExecute()) {
                 result.add(cmd);
             }
+            
+            // Alpha fill opacity
+            cmd = new DiagramModelObjectAlphaCommand(target, source.getAlpha());
+            if(cmd.canExecute()) {
+                result.add(cmd);
+            }
+
+            // Alpha line opacity
+            cmd = new DiagramModelObjectOutlineAlphaCommand(target, source.getLineAlpha());
+            if(cmd.canExecute()) {
+                result.add(cmd);
+            }
+            
+            // Gradient
+            cmd = new FeatureCommand("", target, IDiagramModelObject.FEATURE_GRADIENT, source.getGradient(), IDiagramModelObject.FEATURE_GRADIENT_DEFAULT); //$NON-NLS-1$
+            if(cmd.canExecute()) {
+                result.add(cmd);
+            }
         }
         
         // IDiagramModelConnection
@@ -200,7 +221,7 @@ public class FormatPainterTool extends AbstractTool {
         // Junctions are a no-no
         if(object instanceof IDiagramModelArchimateObject) {
             IArchimateElement element = ((IDiagramModelArchimateObject)object).getArchimateElement();
-            return !(element instanceof IJunctionElement);
+            return !(element instanceof IJunction);
         }
         
         // No to Image

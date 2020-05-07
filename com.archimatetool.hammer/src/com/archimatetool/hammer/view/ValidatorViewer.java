@@ -23,7 +23,7 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.TreeColumn;
 
-import com.archimatetool.editor.ui.ArchimateLabelProvider;
+import com.archimatetool.editor.ui.ArchiLabelProvider;
 import com.archimatetool.hammer.validation.issues.IIssue;
 import com.archimatetool.hammer.validation.issues.IIssueCategory;
 
@@ -95,7 +95,6 @@ public class ValidatorViewer extends TreeViewer {
     
     private void sort(final int columnIndex) {
         setComparator(new ViewerComparator(Collator.getInstance()) {
-            @SuppressWarnings("unchecked")
             @Override
             public int compare(Viewer viewer, Object e1, Object e2) {
                 if(e1 instanceof IIssueCategory && e2 instanceof IIssueCategory) {
@@ -125,16 +124,20 @@ public class ValidatorViewer extends TreeViewer {
      */
     class ValidatorViewerContentProvider implements ITreeContentProvider {
         
+        @Override
         public void inputChanged(Viewer v, Object oldInput, Object newInput) {
         }
         
+        @Override
         public void dispose() {
         }
         
+        @Override
         public Object[] getElements(Object parent) {
             return getChildren(parent);
         }
 
+        @Override
         public Object[] getChildren(Object parentElement) {
             if(parentElement instanceof IIssueCategory) {
                 return ((IIssueCategory)parentElement).getIssues().toArray();
@@ -147,10 +150,12 @@ public class ValidatorViewer extends TreeViewer {
             return new Object[0];
         }
 
+        @Override
         public Object getParent(Object element) {
             return null;
         }
 
+        @Override
         public boolean hasChildren(Object element) {
         	return getChildren(element).length > 0;
         }
@@ -184,7 +189,7 @@ public class ValidatorViewer extends TreeViewer {
                         return issue.getDescription();
 
                     case 2:
-                        return ArchimateLabelProvider.INSTANCE.getLabel(issue.getObject());
+                        return ArchiLabelProvider.INSTANCE.getLabel(issue.getObject());
 
                     default:
                         break;

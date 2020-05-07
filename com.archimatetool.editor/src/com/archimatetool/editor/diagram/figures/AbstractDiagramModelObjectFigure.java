@@ -5,6 +5,9 @@
  */
 package com.archimatetool.editor.diagram.figures;
 
+import org.eclipse.draw2d.ChopboxAnchor;
+import org.eclipse.draw2d.ColorConstants;
+import org.eclipse.draw2d.ConnectionAnchor;
 import org.eclipse.draw2d.Figure;
 import org.eclipse.draw2d.Graphics;
 import org.eclipse.draw2d.IFigure;
@@ -16,11 +19,11 @@ import org.eclipse.swt.graphics.Font;
 
 import com.archimatetool.editor.preferences.IPreferenceConstants;
 import com.archimatetool.editor.preferences.Preferences;
-import com.archimatetool.editor.ui.ArchimateLabelProvider;
+import com.archimatetool.editor.ui.ArchiLabelProvider;
 import com.archimatetool.editor.ui.ColorFactory;
 import com.archimatetool.editor.ui.FontFactory;
-import com.archimatetool.editor.ui.factory.ElementUIFactory;
-import com.archimatetool.editor.ui.factory.IElementUIProvider;
+import com.archimatetool.editor.ui.factory.IGraphicalObjectUIProvider;
+import com.archimatetool.editor.ui.factory.ObjectUIFactory;
 import com.archimatetool.editor.utils.PlatformUtils;
 import com.archimatetool.editor.utils.StringUtils;
 import com.archimatetool.model.IArchimateElement;
@@ -47,11 +50,20 @@ implements IDiagramModelObjectFigure {
     // Delegate to do drawing
     private IFigureDelegate fFigureDelegate;
     
-    public AbstractDiagramModelObjectFigure(IDiagramModelObject diagramModelObject){
+    protected AbstractDiagramModelObjectFigure() {
+    }
+    
+    protected AbstractDiagramModelObjectFigure(IDiagramModelObject diagramModelObject){
+        setDiagramModelObject(diagramModelObject);
+    }
+
+    @Override
+    public void setDiagramModelObject(IDiagramModelObject diagramModelObject) {
         fDiagramModelObject = diagramModelObject;
         setUI();
     }
     
+    @Override
     public IDiagramModelObject getDiagramModelObject() {
         return fDiagramModelObject;
     }
@@ -116,16 +128,13 @@ implements IDiagramModelObjectFigure {
      */
     protected void setFillColor() {
         String val = fDiagramModelObject.getFillColor();
-        Color c = ColorFactory.get(val);
-        if(c != fFillColor) {
-            fFillColor = c;
-            repaint();
-        }
+        fFillColor = ColorFactory.get(val);
     }
     
     /**
      * @return The Fill Color to use
      */
+    @Override
     public Color getFillColor() {
         if(fFillColor == null) {
             return ColorFactory.getDefaultFillColor(fDiagramModelObject);
@@ -139,6 +148,9 @@ implements IDiagramModelObjectFigure {
     protected void setFontColor() {
         String val = fDiagramModelObject.getFontColor();
         Color c = ColorFactory.get(val);
+        if(c == null) {
+            c = ColorConstants.black; // Set to black in case of dark theme
+        }
         if(c != fFontColor) {
             fFontColor = c;
             if(getTextControl() != null) {
@@ -153,16 +165,13 @@ implements IDiagramModelObjectFigure {
      */
     protected void setLineColor() {
         String val = fDiagramModelObject.getLineColor();
-        Color c = ColorFactory.get(val);
-        if(c != fLineColor) {
-            fLineColor = c;
-            repaint();
-        }            
+        fLineColor = ColorFactory.get(val);
     }
     
     /**
      * @return The Line Color to use
      */
+    @Override
     public Color getLineColor() {
         // User preference to derive element line colour
         if(Preferences.STORE.getBoolean(IPreferenceConstants.DERIVE_ELEMENT_LINE_COLOR)) {
@@ -174,6 +183,18 @@ implements IDiagramModelObjectFigure {
             return ColorFactory.getDefaultLineColor(getDiagramModelObject());
         }
         return fLineColor;
+    }
+    
+    protected int getAlpha() {
+        return fDiagramModelObject.getAlpha();
+    }
+
+    protected int getLineAlpha() {
+        return fDiagramModelObject.getLineAlpha();
+    }
+    
+    protected int getGradient() {
+        return fDiagramModelObject.getGradient();
     }
 
     @Override
@@ -188,13 +209,15 @@ implements IDiagramModelObjectFigure {
             toolTipFigure = new ToolTipFigure();
             setToolTip(toolTipFigure);
         }
-
-        String text = ArchimateLabelProvider.INSTANCE.getLabel(getDiagramModelObject());
+        
+        // Set text to object's default text
+        String text = ArchiLabelProvider.INSTANCE.getLabel(getDiagramModelObject());
         toolTipFigure.setText(text);
         
+        // If an ArchiMate type, set text to element type if blank
         if(fDiagramModelObject instanceof IDiagramModelArchimateObject) {
             IArchimateElement element = ((IDiagramModelArchimateObject)fDiagramModelObject).getArchimateElement();
-            String type = ArchimateLabelProvider.INSTANCE.getDefaultName(element.eClass());
+            String type = ArchiLabelProvider.INSTANCE.getDefaultName(element.eClass());
             if(!StringUtils.isSet(text)) { // Name was blank
                 toolTipFigure.setText(type);
             }
@@ -204,6 +227,7 @@ implements IDiagramModelObjectFigure {
         return toolTipFigure;
     }
 
+    @Override
     public boolean didClickTextControl(Point requestLoc) {
         IFigure figure = getTextControl();
         if(figure != null) {
@@ -220,10 +244,16 @@ implements IDiagramModelObjectFigure {
     
     @Override
     public Dimension getDefaultSize() {
-        IElementUIProvider provider = ElementUIFactory.INSTANCE.getProvider(getDiagramModelObject());
-        return provider != null ? provider.getDefaultSize() : new Dimension(120, 55);
+        IGraphicalObjectUIProvider provider = (IGraphicalObjectUIProvider)ObjectUIFactory.INSTANCE.getProvider(getDiagramModelObject());
+        return provider != null ? provider.getUserDefaultSize() : IGraphicalObjectUIProvider.DefaultRectangularSize;
     }
     
+    @Override
+    public ConnectionAnchor getDefaultConnectionAnchor() {
+        return new ChopboxAnchor(this);
+    }
+
+    @Override
     public void dispose() {
     }
 }

@@ -46,17 +46,18 @@ public class ConnectionPreferences extends Preferences {
         RELATION_KEYMAP.put(IArchimatePackage.eINSTANCE.getCompositionRelationship(), 1 << 9);
         RELATION_KEYMAP.put(IArchimatePackage.eINSTANCE.getAggregationRelationship(), 1 << 8);
         RELATION_KEYMAP.put(IArchimatePackage.eINSTANCE.getAssignmentRelationship(), 1 << 7);
-        RELATION_KEYMAP.put(IArchimatePackage.eINSTANCE.getSpecialisationRelationship(), 1 << 6);
-        RELATION_KEYMAP.put(IArchimatePackage.eINSTANCE.getRealisationRelationship(), 1 << 5);
+        RELATION_KEYMAP.put(IArchimatePackage.eINSTANCE.getSpecializationRelationship(), 1 << 6);
+        RELATION_KEYMAP.put(IArchimatePackage.eINSTANCE.getRealizationRelationship(), 1 << 5);
         RELATION_KEYMAP.put(IArchimatePackage.eINSTANCE.getTriggeringRelationship(), 1 << 4);
         RELATION_KEYMAP.put(IArchimatePackage.eINSTANCE.getFlowRelationship(), 1 << 3);
-        RELATION_KEYMAP.put(IArchimatePackage.eINSTANCE.getUsedByRelationship(), 1 << 2);
+        RELATION_KEYMAP.put(IArchimatePackage.eINSTANCE.getServingRelationship(), 1 << 2);
         RELATION_KEYMAP.put(IArchimatePackage.eINSTANCE.getAccessRelationship(), 1 << 1);
         RELATION_KEYMAP.put(IArchimatePackage.eINSTANCE.getAssociationRelationship(), 1 << 0);
         RELATION_KEYMAP.put(IArchimatePackage.eINSTANCE.getInfluenceRelationship(), 1 << 10);
     }
     
     private static EClass[] fRelationClassesForNew = null;
+    private static EClass[] fRelationClassesForNewReverse = null;
     private static EClass[] fRelationClassesForHiding = null;
     
     /**
@@ -99,6 +100,16 @@ public class ConnectionPreferences extends Preferences {
     }
 
     /**
+     * @return The list of relation classes to consider when creating new reverse nested-type relations
+     */
+    public static EClass[] getRelationsClassesForNewReverseRelations() {
+        if(fRelationClassesForNewReverse == null) {
+            fRelationClassesForNewReverse = getRelationsClasses(NEW_REVERSE_RELATIONS_TYPES);
+        }
+        return fRelationClassesForNewReverse;
+    }
+
+    /**
      * @return The list of relation classes to consider as a nested-type relation without explicit connections
      */
     public static EClass[] getRelationsClassesForHiding() {
@@ -127,6 +138,7 @@ public class ConnectionPreferences extends Preferences {
      */
     static void reset() {
         fRelationClassesForNew = null;
+        fRelationClassesForNewReverse = null;
         fRelationClassesForHiding = null;
     }
 }

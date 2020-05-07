@@ -18,15 +18,14 @@ import com.archimatetool.tests.TestUtils;
 @SuppressWarnings("nls")
 public class TestSupport {
     
-    private static File testFolder;
+    private static File reportsFolder;
     
-    public static File STANDARD_REPORT_MAIN_FILE = new File(getReportsFolder(), "Standard Report/main.jrxml");
     public static File CUSTOM_REPORT_MAIN_FILE = new File(getReportsFolder(), "Customizable Report/main.jrxml");
 
     public static File getReportsFolder() {
-        if(testFolder == null) {
-            testFolder = TestUtils.getLocalBundleFolder("com.archimatetool.jasperreports", "reports");
+        if(reportsFolder == null) {
+            reportsFolder = TestUtils.getLocalBundleFolder("com.archimatetool.jasperreports", "reports");
         }
-        return testFolder;
+        return reportsFolder;
     }
 }

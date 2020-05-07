@@ -34,11 +34,11 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.keys.IBindingService;
 
+import com.archimatetool.editor.actions.ArchiActionFactory;
 import com.archimatetool.editor.diagram.FloatingPalette;
 import com.archimatetool.editor.diagram.IDiagramModelEditor;
-import com.archimatetool.editor.ui.IArchimateImages;
+import com.archimatetool.editor.ui.IArchiImages;
 import com.archimatetool.editor.ui.components.PartListenerAdapter;
-import com.archimatetool.editor.utils.PlatformUtils;
 
 
 
@@ -159,7 +159,7 @@ public class FullScreenAction extends WorkbenchPartAction {
     
     @Override
     public void run() {
-        fGraphicalViewer = (GraphicalViewer)getWorkbenchPart().getAdapter(GraphicalViewer.class);
+        fGraphicalViewer = getWorkbenchPart().getAdapter(GraphicalViewer.class);
         fOldParent = fGraphicalViewer.getControl().getParent();
         fOldPaletteViewer = fGraphicalViewer.getEditDomain().getPaletteViewer();
         
@@ -173,16 +173,18 @@ public class FullScreenAction extends WorkbenchPartAction {
         fGraphicalViewer.getControl().addKeyListener(keyListener);
 
         // Create new Shell
-        // SWT.SHELL_TRIM is needed for GTK for a full-size shell (tested on Ubuntu)
-        int style = PlatformUtils.isWindows() ? SWT.APPLICATION_MODAL : SWT.APPLICATION_MODAL | SWT.SHELL_TRIM ;
-        fNewShell = new Shell(Display.getCurrent(), style); 
+        fNewShell = new Shell(Display.getCurrent(), SWT.NONE); 
+        
+        // To put the full screen on the current monitor
+        fNewShell.setLocation(fOldParent.getShell().getLocation());
+
         fNewShell.setFullScreen(true);
         fNewShell.setMaximized(true);
         fNewShell.setText(Display.getAppName());
         fNewShell.setLayout(new FillLayout());
-        fNewShell.setImage(IArchimateImages.ImageFactory.getImage(IArchimateImages.ICON_APP_128));
+        fNewShell.setImage(IArchiImages.ImageFactory.getImage(IArchiImages.ICON_APP_128));
         
-        // On Ubuntu the min/max/close buttons are shown, so trap close button
+        // On Ubuntu the min/max/close buttons are shown, so trap the close button
         fNewShell.addShellListener(new ShellAdapter() {
             @Override
             public void shellClosed(ShellEvent e) {
@@ -201,8 +203,8 @@ public class FullScreenAction extends WorkbenchPartAction {
             fFloatingPalette.open();
         }
         
-        // Hide the old shell
-        fOldParent.getShell().setVisible(false);
+        // Disable the old parent shell
+        fOldParent.getShell().setEnabled(false);
         
         // Listen to Parts being closed
         getWorkbenchPart().getSite().getWorkbenchWindow().getPartService().addPartListener(partListener);
@@ -227,8 +229,8 @@ public class FullScreenAction extends WorkbenchPartAction {
         // Reset Property
         fGraphicalViewer.setProperty("full_screen", null); //$NON-NLS-1$
 
-        // Show the old shell
-        fOldParent.getShell().setVisible(true);
+        // Enable the old parent shell
+        fOldParent.getShell().setEnabled(true);
 
         // Focus
         getWorkbenchPart().getSite().getWorkbenchWindow().getShell().setFocus();
@@ -241,8 +243,8 @@ public class FullScreenAction extends WorkbenchPartAction {
      */
     private void addKeyBindings() {
         if(keyBindings.isEmpty()) {
-            ActionRegistry registry = (ActionRegistry)getWorkbenchPart().getAdapter(ActionRegistry.class);
-            IBindingService service = (IBindingService)getWorkbenchPart().getSite().getService(IBindingService.class);
+            ActionRegistry registry = getWorkbenchPart().getAdapter(ActionRegistry.class);
+            IBindingService service = getWorkbenchPart().getSite().getService(IBindingService.class);
             
             addKeyBinding(registry, service, ActionFactory.SELECT_ALL);
             addKeyBinding(registry, service, ActionFactory.UNDO);
@@ -251,6 +253,7 @@ public class FullScreenAction extends WorkbenchPartAction {
             addKeyBinding(registry, service, ActionFactory.CUT);
             addKeyBinding(registry, service, ActionFactory.COPY);
             addKeyBinding(registry, service, ActionFactory.PASTE);
+            addKeyBinding(registry, service, ArchiActionFactory.PASTE_SPECIAL);
             addKeyBinding(registry, service, ActionFactory.RENAME);
         }
     }

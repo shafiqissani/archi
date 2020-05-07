@@ -7,10 +7,14 @@ package com.archimatetool.editor.views.tree.actions;
 
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 
+import com.archimatetool.editor.preferences.IPreferenceConstants;
+import com.archimatetool.editor.preferences.Preferences;
+import com.archimatetool.editor.utils.PlatformUtils;
 import com.archimatetool.editor.views.tree.TreeModelViewer;
 import com.archimatetool.editor.views.tree.commands.DeleteCommandHandler;
 
@@ -44,27 +48,45 @@ public class DeleteAction extends ViewerAction {
         DeleteCommandHandler cmdHandler = new DeleteCommandHandler((TreeModelViewer)getSelectionProvider(),
                 selection.toArray());
 
-        /*
-         * If the objects are referenced in a diagram warn user
-         */
+        // If the objects are referenced in a diagram then warn
         if(cmdHandler.hasDiagramReferences()) {
             if(!MessageDialog.openQuestion(
                     Display.getDefault().getActiveShell(),
                     Messages.DeleteAction_1,
                     Messages.DeleteAction_2 +
-                    "\n\n" + //$NON-NLS-1$
+                    "\n" + //$NON-NLS-1$
+                    Messages.DeleteAction_3)) {
+                        return;
+            }
+        }
+        // Else if preference is set to warn user in all cases
+        else if(Preferences.STORE.getBoolean(IPreferenceConstants.SHOW_WARNING_ON_DELETE_FROM_TREE)) {
+            if(!MessageDialog.openQuestion(
+                    Display.getDefault().getActiveShell(),
+                    Messages.DeleteAction_1,
                     Messages.DeleteAction_3)) {
                         return;
             }
         }
         
-        cmdHandler.delete();
+        // TODO: Bug on Mac 10.12 and newer - Open dialog does not close straight away
+        // See https://bugs.eclipse.org/bugs/show_bug.cgi?id=527306
+        if(PlatformUtils.isMac()) {
+            while(Display.getCurrent().readAndDispatch());
+        }
+        
+        BusyIndicator.showWhile(null, new Runnable() {
+            @Override
+            public void run() {
+                cmdHandler.delete();
+            }
+        });
     }
 
     @Override
-    public void update(IStructuredSelection selection) {
+    public void update() {
         setEnabled(false);
-        for(Object element : selection.toList()) {
+        for(Object element : getSelection().toList()) {
             if(DeleteCommandHandler.canDelete(element)) { // At least one element can be deleted
                 setEnabled(true);
                 break;

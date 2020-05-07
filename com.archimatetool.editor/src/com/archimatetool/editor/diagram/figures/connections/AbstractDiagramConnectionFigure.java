@@ -5,26 +5,34 @@
  */
 package com.archimatetool.editor.diagram.figures.connections;
 
+import java.lang.reflect.Field;
+
 import org.eclipse.draw2d.ColorConstants;
 import org.eclipse.draw2d.ConnectionLocator;
+import org.eclipse.draw2d.Graphics;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.Label;
 import org.eclipse.draw2d.Locator;
 import org.eclipse.draw2d.PolygonDecoration;
+import org.eclipse.draw2d.ScaledGraphics;
 // line-curves patch by Jean-Baptiste Sarrodie (aka Jaiguru)
 // Use alternate PolylineConnection
 //import org.eclipse.draw2d.PolylineConnection;
 import org.eclipse.draw2d.geometry.Point;
+import org.eclipse.draw2d.geometry.Rectangle;
+import org.eclipse.gef.editparts.ZoomListener;
+import org.eclipse.gef.editparts.ZoomManager;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.Path;
 
 import com.archimatetool.editor.diagram.figures.ToolTipFigure;
-import com.archimatetool.editor.diagram.util.AnimationUtil;
-import com.archimatetool.editor.model.viewpoints.ViewpointsManager;
+import com.archimatetool.editor.preferences.IPreferenceConstants;
 import com.archimatetool.editor.preferences.Preferences;
 import com.archimatetool.editor.ui.ColorFactory;
 import com.archimatetool.editor.ui.FontFactory;
 import com.archimatetool.editor.utils.PlatformUtils;
+import com.archimatetool.editor.utils.StringUtils;
 import com.archimatetool.model.IDiagramModelConnection;
 
 
@@ -47,16 +55,52 @@ extends RoundedPolylineConnection implements IDiagramConnectionFigure {
     protected Color fFontColor;
     protected Color fLineColor;
     
-	public AbstractDiagramConnectionFigure(IDiagramModelConnection connection) {
-	    fDiagramModelConnection = connection;
+    protected boolean SHOW_TARGET_FEEDBACK = false;
+    
+    private ZoomListener zoomListener = new ZoomListener() {
+        @Override
+        public void zoomChanged(double newZoomValue) {
+            handleZoomChanged(newZoomValue);
+        }
+    };
+    
+    protected ZoomManager zoomManager;
+    
+    /**
+     * Set the Zoom Manager
+     * @param manager
+     */
+    public void setZoomManager(ZoomManager manager) {
+        if(zoomManager != manager) {
+            if(zoomManager != null) {
+                zoomManager.removeZoomListener(zoomListener);
+            }
+            
+            zoomManager = manager;
+            
+            if(zoomManager != null) {
+                zoomManager.addZoomListener(zoomListener);
+                handleZoomChanged(zoomManager.getZoom());
+            }
+        }
+    }
 
-	    setFigureProperties();
+    /**
+     * Zoom Factor changed - deal with it :-)
+     * @param newZoomValue
+     */
+    protected void handleZoomChanged(double newZoomValue) {
+    }
+    
+	@Override
+    public void setModelConnection(IDiagramModelConnection connection) {
+	    fDiagramModelConnection = connection;
 	    
-		// Have to add this if we want Animation to work!
-		AnimationUtil.addConnectionForRoutingAnimation(this);
+	    setFigureProperties();
 	}
 	
-	public IDiagramModelConnection getModelConnection() {
+	@Override
+    public IDiagramModelConnection getModelConnection() {
 	    return fDiagramModelConnection;
 	}
 	
@@ -64,6 +108,7 @@ extends RoundedPolylineConnection implements IDiagramConnectionFigure {
 		setTargetDecoration(new PolygonDecoration()); // arrow at target endpoint
 	}
 	
+    @Override
     public void refreshVisuals() {
         // If the text position has been changed by user update it
         if(fDiagramModelConnection.getTextPosition() != fTextPosition) {
@@ -81,28 +126,23 @@ extends RoundedPolylineConnection implements IDiagramConnectionFigure {
         
         setLineWidth();
         
-        // Set Enabled according to current Viewpoint
-        boolean enabled = ViewpointsManager.INSTANCE.isAllowedType(getModelConnection());
-        setEnabled(enabled);
-        if(getSourceDecoration() != null) {
-            getSourceDecoration().setEnabled(enabled);
-        }
-        if(getTargetDecoration() != null) {
-            getTargetDecoration().setEnabled(enabled);
-        }
-        getConnectionLabel().setEnabled(enabled);
+        getConnectionLabel().setOpaque(Preferences.STORE.getInt(IPreferenceConstants.CONNECTION_LABEL_STRATEGY) == CONNECTION_LABEL_OPAQUE);
+        
+        repaint(); // repaint when figure changes
     }
 
     /**
      * @param copy
      * @return True if the user clicked on the Relationship edit label
      */
+    @Override
     public boolean didClickConnectionLabel(Point requestLoc) {
         Label label = getConnectionLabel();
         label.translateToRelative(requestLoc);
         return label.containsPoint(requestLoc);
     }
 
+    @Override
     public Label getConnectionLabel() {
         if(fConnectionLabel == null) {
             fConnectionLabel = new Label(""); //$NON-NLS-1$
@@ -130,7 +170,8 @@ extends RoundedPolylineConnection implements IDiagramConnectionFigure {
     }
     
     protected void setConnectionText() {
-        getConnectionLabel().setText(fDiagramModelConnection.getName());
+        boolean displayName = fDiagramModelConnection.isNameVisible();
+        getConnectionLabel().setText(displayName ? fDiagramModelConnection.getName().trim() : ""); //$NON-NLS-1$
     }
 
     /**
@@ -184,17 +225,107 @@ extends RoundedPolylineConnection implements IDiagramConnectionFigure {
         setLineWidth(fDiagramModelConnection.getLineWidth());
     }
     
-    /**
-     * Highlight this connection
-     */
-    public void highlight(boolean set) {
-    }
-    
     @Override
     public IFigure getToolTip() {
         if(super.getToolTip() == null && Preferences.doShowViewTooltips()) {
             setToolTip(new ToolTipFigure());
         }
         return Preferences.doShowViewTooltips() ? super.getToolTip() : null;
+    }
+    
+    @Override
+    public void showTargetFeedback() {
+        if(!SHOW_TARGET_FEEDBACK) {
+            SHOW_TARGET_FEEDBACK = true;
+            repaint();
+        }
+    }
+    
+    @Override
+    public void eraseTargetFeedback() {
+        if(SHOW_TARGET_FEEDBACK) {
+            SHOW_TARGET_FEEDBACK = false;
+            repaint();
+        }
+    }
+    
+    @Override
+    public void paintFigure(Graphics graphics) {
+        if(SHOW_TARGET_FEEDBACK) {
+            setForegroundColor(ColorFactory.get(0, 0, 255));
+            setLineWidth(getModelConnection().getLineWidth() + 1);
+        }
+        else {
+            setLineWidth();
+            setForegroundColor(fLineColor);
+        }
+
+        if(StringUtils.isSet(fConnectionLabel.getText()) && 
+                Preferences.STORE.getInt(IPreferenceConstants.CONNECTION_LABEL_STRATEGY) == CONNECTION_LABEL_CLIPPED) {
+            clipTextLabel(graphics);
+        }
+        else {
+            super.paintFigure(graphics);
+        }
+    }
+    
+    /**
+     * Clip the text label so it doesn't draw on the connection
+     */
+    protected void clipTextLabel(Graphics graphics) {
+        // Margin around label
+        final int labelMargin = 1;
+        
+        // Save dimensions of original clipping area and label
+        Rectangle g = graphics.getClip(new Rectangle());
+        Rectangle l = fConnectionLabel.getTextBounds();
+        
+        // Label margin
+        l.expand(labelMargin, labelMargin);
+        
+        // Create a Path that fills the clipping area minus the label
+        Path path = new Path(null);
+        
+        path.moveTo(g.x, g.y);
+        path.lineTo(l.x, l.y);
+        path.lineTo(l.x + l.width, l.y);
+        path.lineTo(l.x + l.width, l.y + l.height);
+        path.lineTo(l.x, l.y + l.height);
+        path.lineTo(l.x, l.y);
+        path.lineTo(g.x, g.y);
+        path.lineTo(g.x, g.y + g.height);
+        path.lineTo(g.x + g.width, g.y + g.height);
+        path.lineTo(g.x + g.width, g.y);
+        path.lineTo(g.x, g.y);
+        
+        graphics.clipPath(path);
+        
+        // Monkey patch to fix NPE when connection is disabled when Viewpoint set
+        // If we set private field sharedClipping to false then SWTGraphics.checkSharedClipping() is not called
+        // See https://github.com/archimatetool/archi/issues/431
+        if(!isEnabled()) {
+            try {
+                Graphics graphicsCopy = graphics;
+                
+                // ScaledGraphics is a wrapper around SWTGraphics
+                if(graphics instanceof ScaledGraphics) {
+                    Field f = graphicsCopy.getClass().getDeclaredField("graphics"); //$NON-NLS-1$
+                    f.setAccessible(true);
+                    graphicsCopy = (Graphics)f.get(graphics);
+                }
+                
+                Field f = graphicsCopy.getClass().getDeclaredField("sharedClipping"); //$NON-NLS-1$
+                f.setAccessible(true);
+                f.set(graphicsCopy, false);
+            }
+            catch(NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException ex) {
+                // Consume this exception as this only applies to SWTGraphics and ScaledGraphics
+                // SVG Image Export uses GraphicsToGraphics2DAdaptor and will throw a NoSuchFieldException
+            }
+        }
+
+        super.paintFigure(graphics);
+        
+        path.dispose();
     }
 }

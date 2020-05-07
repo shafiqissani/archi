@@ -17,12 +17,15 @@ import org.eclipse.emf.ecore.impl.ENotificationImpl;
 import org.eclipse.emf.ecore.util.EObjectContainmentEList;
 import org.eclipse.emf.ecore.util.InternalEList;
 
+import com.archimatetool.model.IArchimateConcept;
 import com.archimatetool.model.IArchimateElement;
 import com.archimatetool.model.IArchimatePackage;
+import com.archimatetool.model.IDiagramModelArchimateComponent;
 import com.archimatetool.model.IDiagramModelArchimateObject;
 import com.archimatetool.model.IDiagramModelContainer;
 import com.archimatetool.model.IDiagramModelObject;
 import com.archimatetool.model.IFolder;
+import com.archimatetool.model.ITextPosition;
 import com.archimatetool.model.util.Logger;
 
 
@@ -32,12 +35,13 @@ import com.archimatetool.model.util.Logger;
  * <!-- end-user-doc -->
  * <p>
  * The following features are implemented:
+ * </p>
  * <ul>
  *   <li>{@link com.archimatetool.model.impl.DiagramModelArchimateObject#getChildren <em>Children</em>}</li>
+ *   <li>{@link com.archimatetool.model.impl.DiagramModelArchimateObject#getTextPosition <em>Text Position</em>}</li>
  *   <li>{@link com.archimatetool.model.impl.DiagramModelArchimateObject#getArchimateElement <em>Archimate Element</em>}</li>
  *   <li>{@link com.archimatetool.model.impl.DiagramModelArchimateObject#getType <em>Type</em>}</li>
  * </ul>
- * </p>
  *
  * @generated
  */
@@ -52,6 +56,24 @@ public class DiagramModelArchimateObject extends DiagramModelObject implements I
      * @ordered
      */
     protected EList<IDiagramModelObject> children;
+    /**
+     * The default value of the '{@link #getTextPosition() <em>Text Position</em>}' attribute.
+     * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+     * @see #getTextPosition()
+     * @generated
+     * @ordered
+     */
+    protected static final int TEXT_POSITION_EDEFAULT = 0;
+    /**
+     * The cached value of the '{@link #getTextPosition() <em>Text Position</em>}' attribute.
+     * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+     * @see #getTextPosition()
+     * @generated
+     * @ordered
+     */
+    protected int textPosition = TEXT_POSITION_EDEFAULT;
     /**
      * The default value of the '{@link #getType() <em>Type</em>}' attribute.
      * <!-- begin-user-doc -->
@@ -99,11 +121,35 @@ public class DiagramModelArchimateObject extends DiagramModelObject implements I
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public EList<IDiagramModelObject> getChildren() {
         if (children == null) {
             children = new EObjectContainmentEList<IDiagramModelObject>(IDiagramModelObject.class, this, IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__CHILDREN);
         }
         return children;
+    }
+
+    /**
+     * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+     * @generated
+     */
+    @Override
+    public int getTextPosition() {
+        return textPosition;
+    }
+
+    /**
+     * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+     * @generated
+     */
+    @Override
+    public void setTextPosition(int newTextPosition) {
+        int oldTextPosition = textPosition;
+        textPosition = newTextPosition;
+        if (eNotificationRequired())
+            eNotify(new ENotificationImpl(this, Notification.SET, IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__TEXT_POSITION, oldTextPosition, textPosition));
     }
 
     @Override
@@ -128,6 +174,7 @@ public class DiagramModelArchimateObject extends DiagramModelObject implements I
      * <!-- end-user-doc -->
      * @generated NOT
      */
+    @Override
     public IArchimateElement getArchimateElement() {
         if(fArchimateElement == null) {
             Logger.logError("getArchimateElement() returning null", new Throwable()); //$NON-NLS-1$
@@ -141,19 +188,27 @@ public class DiagramModelArchimateObject extends DiagramModelObject implements I
      * <!-- end-user-doc -->
      * @generated NOT
      */
+    @Override
     public void setArchimateElement(IArchimateElement archimateElement) {
         if(archimateElement == null) {
             Logger.logError("setArchimateElement() setting null", new Throwable()); //$NON-NLS-1$
         }
-
+        
+        // If we already have a concept we *must* remove it from the referenced list first
+        if(fArchimateElement != null) {
+            ((ArchimateElement)fArchimateElement).diagramObjects.remove(this);
+        }
+        
         fArchimateElement = archimateElement;
+        
+        ((ArchimateElement)fArchimateElement).diagramObjects.add(this);
     }
     
     @Override
     public NotificationChain eInverseAdd(InternalEObject otherEnd, int featureID, Class<?> baseClass, NotificationChain msgs) {
-        // Add a reference to this in the Archimate Element
+        // Re-Add a reference to this in the Archimate Element
         if(fArchimateElement != null) { // this will be null when a copy of this object is made
-            fArchimateElement.getReferencingDiagramObjects().add(this);
+            ((ArchimateElement)fArchimateElement).diagramObjects.add(this);
         }
         return super.eInverseAdd(otherEnd, featureID, baseClass, msgs);
     }
@@ -162,7 +217,7 @@ public class DiagramModelArchimateObject extends DiagramModelObject implements I
     public NotificationChain eInverseRemove(InternalEObject otherEnd, int featureID, Class<?> baseClass, NotificationChain msgs) {
         // Remove the reference to this in the Archimate Element
         if(fArchimateElement != null) { // this could be null...possibly?
-            fArchimateElement.getReferencingDiagramObjects().remove(this);
+            ((ArchimateElement)fArchimateElement).diagramObjects.remove(this);
         }
         return super.eInverseRemove(otherEnd, featureID, baseClass, msgs);
     }
@@ -172,6 +227,7 @@ public class DiagramModelArchimateObject extends DiagramModelObject implements I
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public int getType() {
         return type;
     }
@@ -181,6 +237,7 @@ public class DiagramModelArchimateObject extends DiagramModelObject implements I
      * <!-- end-user-doc -->
      * @generated
      */
+    @Override
     public void setType(int newType) {
         int oldType = type;
         type = newType;
@@ -193,7 +250,31 @@ public class DiagramModelArchimateObject extends DiagramModelObject implements I
      * <!-- end-user-doc -->
      * @generated NOT
      */
-    public void addArchimateElementToModel(IFolder parent) {
+    @Override
+    public IArchimateElement getArchimateConcept() {
+        return getArchimateElement();
+    }
+
+    /**
+     * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+     * @generated NOT
+     */
+    @Override
+    public void setArchimateConcept(IArchimateConcept concept) {
+        if(!(concept instanceof IArchimateElement)) {
+            throw new IllegalArgumentException("Should be of type IArchimateElement"); //$NON-NLS-1$
+        }
+        setArchimateElement((IArchimateElement)concept);
+    }
+
+    /**
+     * <!-- begin-user-doc -->
+     * <!-- end-user-doc -->
+     * @generated NOT
+     */
+    @Override
+    public void addArchimateConceptToModel(IFolder parent) {
         IArchimateElement element = getArchimateElement();
 
         if(element != null && element.eContainer() != null) {
@@ -202,7 +283,7 @@ public class DiagramModelArchimateObject extends DiagramModelObject implements I
         
         // If parent is null use default folder
         if(parent == null) {
-            parent = getDiagramModel().getArchimateModel().getDefaultFolderForElement(element);
+            parent = getDiagramModel().getArchimateModel().getDefaultFolderForObject(element);
         }
 
         parent.getElements().add(element);
@@ -213,7 +294,8 @@ public class DiagramModelArchimateObject extends DiagramModelObject implements I
      * <!-- end-user-doc -->
      * @generated NOT
      */
-    public void removeArchimateElementFromModel() {
+    @Override
+    public void removeArchimateConceptFromModel() {
         IArchimateElement element = getArchimateElement();
         if(element != null) {
             IFolder folder = (IFolder)element.eContainer();
@@ -260,6 +342,8 @@ public class DiagramModelArchimateObject extends DiagramModelObject implements I
         switch (featureID) {
             case IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__CHILDREN:
                 return getChildren();
+            case IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__TEXT_POSITION:
+                return getTextPosition();
             case IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__ARCHIMATE_ELEMENT:
                 return getArchimateElement();
             case IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__TYPE:
@@ -280,6 +364,9 @@ public class DiagramModelArchimateObject extends DiagramModelObject implements I
             case IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__CHILDREN:
                 getChildren().clear();
                 getChildren().addAll((Collection<? extends IDiagramModelObject>)newValue);
+                return;
+            case IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__TEXT_POSITION:
+                setTextPosition((Integer)newValue);
                 return;
             case IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__ARCHIMATE_ELEMENT:
                 setArchimateElement((IArchimateElement)newValue);
@@ -302,6 +389,9 @@ public class DiagramModelArchimateObject extends DiagramModelObject implements I
             case IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__CHILDREN:
                 getChildren().clear();
                 return;
+            case IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__TEXT_POSITION:
+                setTextPosition(TEXT_POSITION_EDEFAULT);
+                return;
             case IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__ARCHIMATE_ELEMENT:
                 setArchimateElement((IArchimateElement)null);
                 return;
@@ -322,6 +412,8 @@ public class DiagramModelArchimateObject extends DiagramModelObject implements I
         switch (featureID) {
             case IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__CHILDREN:
                 return children != null && !children.isEmpty();
+            case IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__TEXT_POSITION:
+                return textPosition != TEXT_POSITION_EDEFAULT;
             case IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__ARCHIMATE_ELEMENT:
                 return getArchimateElement() != null;
             case IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__TYPE:
@@ -343,6 +435,17 @@ public class DiagramModelArchimateObject extends DiagramModelObject implements I
                 default: return -1;
             }
         }
+        if (baseClass == IDiagramModelArchimateComponent.class) {
+            switch (derivedFeatureID) {
+                default: return -1;
+            }
+        }
+        if (baseClass == ITextPosition.class) {
+            switch (derivedFeatureID) {
+                case IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__TEXT_POSITION: return IArchimatePackage.TEXT_POSITION__TEXT_POSITION;
+                default: return -1;
+            }
+        }
         return super.eBaseStructuralFeatureID(derivedFeatureID, baseClass);
     }
 
@@ -359,6 +462,17 @@ public class DiagramModelArchimateObject extends DiagramModelObject implements I
                 default: return -1;
             }
         }
+        if (baseClass == IDiagramModelArchimateComponent.class) {
+            switch (baseFeatureID) {
+                default: return -1;
+            }
+        }
+        if (baseClass == ITextPosition.class) {
+            switch (baseFeatureID) {
+                case IArchimatePackage.TEXT_POSITION__TEXT_POSITION: return IArchimatePackage.DIAGRAM_MODEL_ARCHIMATE_OBJECT__TEXT_POSITION;
+                default: return -1;
+            }
+        }
         return super.eDerivedStructuralFeatureID(baseFeatureID, baseClass);
     }
 
@@ -371,8 +485,10 @@ public class DiagramModelArchimateObject extends DiagramModelObject implements I
     public String toString() {
         if (eIsProxy()) return super.toString();
 
-        StringBuffer result = new StringBuffer(super.toString());
-        result.append(" (type: "); //$NON-NLS-1$
+        StringBuilder result = new StringBuilder(super.toString());
+        result.append(" (textPosition: "); //$NON-NLS-1$
+        result.append(textPosition);
+        result.append(", type: "); //$NON-NLS-1$
         result.append(type);
         result.append(')');
         return result.toString();

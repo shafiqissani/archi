@@ -21,6 +21,7 @@ import com.archimatetool.editor.diagram.commands.CreateDiagramObjectCommand;
 import com.archimatetool.editor.diagram.commands.SetConstraintObjectCommand;
 import com.archimatetool.editor.diagram.editparts.IConstrainedSizeEditPart;
 import com.archimatetool.editor.diagram.editparts.INonResizableEditPart;
+import com.archimatetool.model.IDiagramModel;
 import com.archimatetool.model.IDiagramModelContainer;
 import com.archimatetool.model.IDiagramModelObject;
 import com.archimatetool.model.ILockable;
@@ -86,7 +87,7 @@ extends XYLayoutEditPolicy {
 
         // Return a command that can move and/or resize a child
         if(constraint instanceof Rectangle) {
-            return new SetConstraintObjectCommand((IDiagramModelObject)child.getModel(), (Rectangle)constraint);
+            return new SetConstraintObjectCommand(request, (IDiagramModelObject)child.getModel(), (Rectangle)constraint);
         }
 
         return null;
@@ -107,17 +108,21 @@ extends XYLayoutEditPolicy {
      * If you don't want a part to be added, return null here.
      */
     @Override
-    protected Command createAddCommand(ChangeBoundsRequest request, EditPart childEditPart, Object constraint) {
+    protected AddObjectCommand createAddCommand(ChangeBoundsRequest request, EditPart childEditPart, Object constraint) {
         IDiagramModelContainer parent = (IDiagramModelContainer)getHost().getModel();
         IDiagramModelObject child = (IDiagramModelObject)childEditPart.getModel();
         
-        // Keep within box
         Rectangle bounds = (Rectangle)constraint;
-        if(bounds.x < 0) {
-            bounds.x = 0;
-        }
-        if(bounds.y < 0) {
-            bounds.y = 0;
+
+        // Keep within the parent box
+        // Fixed 2019-06-11 to check that the parent is not a diagram model (which can have negative space)
+        if(!(parent instanceof IDiagramModel)) {
+            if(bounds.x < 0) {
+                bounds.x = 0;
+            }
+            if(bounds.y < 0) {
+                bounds.y = 0;
+            }
         }
         
         return new AddObjectCommand(parent, child, bounds);
@@ -127,31 +132,31 @@ extends XYLayoutEditPolicy {
      * AddObjectCommand
      */
     public static class AddObjectCommand extends Command {
-        IDiagramModelContainer fParent;
-        IDiagramModelObject fChild;
-        Rectangle fBounds;
+        IDiagramModelContainer parent;
+        IDiagramModelObject child;
+        Rectangle bounds;
 
         public AddObjectCommand(IDiagramModelContainer parent, IDiagramModelObject child, Rectangle bounds) {
-            fParent = parent;
-            fChild = child;
-            fBounds = bounds.getCopy();
+            this.parent = parent;
+            this.child = child;
+            this.bounds = bounds.getCopy();
         }
         
         @Override
         public void execute() {
-            fChild.setBounds(fBounds.x, fBounds.y, fBounds.width, fBounds.height);
-            fParent.getChildren().add(fChild);
+            child.setBounds(bounds.x, bounds.y, bounds.width, bounds.height);
+            parent.getChildren().add(child);
         }
 
         @Override
         public void undo() {
-            fParent.getChildren().remove(fChild);
+            parent.getChildren().remove(child);
         }
         
         @Override
         public void dispose() {
-            fParent = null;
-            fChild = null;
+            parent = null;
+            child = null;
         }
     }
 }

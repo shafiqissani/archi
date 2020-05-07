@@ -12,13 +12,13 @@ import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.commands.CompoundCommand;
 import org.eclipse.gef.ui.actions.SelectionAction;
 import org.eclipse.swt.graphics.RGB;
-import org.eclipse.swt.widgets.ColorDialog;
 import org.eclipse.ui.IWorkbenchPart;
 
 import com.archimatetool.editor.diagram.commands.FillColorCommand;
 import com.archimatetool.editor.ui.ColorFactory;
-import com.archimatetool.editor.ui.factory.ElementUIFactory;
-import com.archimatetool.editor.ui.factory.IElementUIProvider;
+import com.archimatetool.editor.ui.components.CustomColorDialog;
+import com.archimatetool.editor.ui.factory.IObjectUIProvider;
+import com.archimatetool.editor.ui.factory.ObjectUIFactory;
 import com.archimatetool.model.IArchimatePackage;
 import com.archimatetool.model.IDiagramModelObject;
 import com.archimatetool.model.ILockable;
@@ -68,7 +68,7 @@ public class FillColorAction extends SelectionAction {
             return;
         }
 
-        ColorDialog colorDialog = new ColorDialog(getWorkbenchPart().getSite().getShell());
+        CustomColorDialog colorDialog = new CustomColorDialog(getWorkbenchPart().getSite().getShell());
         
         // Set default RGB on first selected object
         RGB defaultRGB = null;
@@ -116,8 +116,8 @@ public class FillColorAction extends SelectionAction {
         }
         
         if(model instanceof IDiagramModelObject) {
-            IElementUIProvider provider = ElementUIFactory.INSTANCE.getProvider(((IDiagramModelObject)model));
-            return provider != null && provider.shouldExposeFeature((IDiagramModelObject)model, IArchimatePackage.Literals.DIAGRAM_MODEL_OBJECT__FILL_COLOR);
+            IObjectUIProvider provider = ObjectUIFactory.INSTANCE.getProvider(((IDiagramModelObject)model));
+            return provider != null && provider.shouldExposeFeature(IArchimatePackage.Literals.DIAGRAM_MODEL_OBJECT__FILL_COLOR.getName());
         }
         
         return false;

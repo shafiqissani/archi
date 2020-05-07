@@ -9,8 +9,8 @@ import org.eclipse.draw2d.ColorConstants;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.PolylineConnection;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.jface.viewers.BaseLabelProvider;
-import org.eclipse.jface.viewers.ILabelProvider;
+import org.eclipse.jface.viewers.IBaseLabelProvider;
+import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
@@ -24,27 +24,30 @@ import com.archimatetool.editor.diagram.figures.ToolTipFigure;
 import com.archimatetool.editor.diagram.figures.connections.AccessConnectionFigure;
 import com.archimatetool.editor.diagram.figures.connections.AggregationConnectionFigure;
 import com.archimatetool.editor.diagram.figures.connections.AssignmentConnectionFigure;
+import com.archimatetool.editor.diagram.figures.connections.AssociationConnectionFigure;
 import com.archimatetool.editor.diagram.figures.connections.CompositionConnectionFigure;
 import com.archimatetool.editor.diagram.figures.connections.FlowConnectionFigure;
 import com.archimatetool.editor.diagram.figures.connections.InfluenceConnectionFigure;
-import com.archimatetool.editor.diagram.figures.connections.RealisationConnectionFigure;
-import com.archimatetool.editor.diagram.figures.connections.SpecialisationConnectionFigure;
+import com.archimatetool.editor.diagram.figures.connections.RealizationConnectionFigure;
+import com.archimatetool.editor.diagram.figures.connections.ServingConnectionFigure;
+import com.archimatetool.editor.diagram.figures.connections.SpecializationConnectionFigure;
 import com.archimatetool.editor.diagram.figures.connections.TriggeringConnectionFigure;
-import com.archimatetool.editor.diagram.figures.connections.UsedByConnectionFigure;
-import com.archimatetool.editor.ui.ArchimateLabelProvider;
+import com.archimatetool.editor.ui.ArchiLabelProvider;
+import com.archimatetool.editor.utils.StringUtils;
 import com.archimatetool.model.IAccessRelationship;
 import com.archimatetool.model.IAggregationRelationship;
-import com.archimatetool.model.IArchimateComponent;
+import com.archimatetool.model.IArchimateConcept;
+import com.archimatetool.model.IArchimateRelationship;
 import com.archimatetool.model.IAssignmentRelationship;
+import com.archimatetool.model.IAssociationRelationship;
 import com.archimatetool.model.ICompositionRelationship;
 import com.archimatetool.model.IFlowRelationship;
 import com.archimatetool.model.IInfluenceRelationship;
 import com.archimatetool.model.INameable;
-import com.archimatetool.model.IRealisationRelationship;
-import com.archimatetool.model.IRelationship;
-import com.archimatetool.model.ISpecialisationRelationship;
+import com.archimatetool.model.IRealizationRelationship;
+import com.archimatetool.model.IServingRelationship;
+import com.archimatetool.model.ISpecializationRelationship;
 import com.archimatetool.model.ITriggeringRelationship;
-import com.archimatetool.model.IUsedByRelationship;
 
 
 /**
@@ -52,8 +55,8 @@ import com.archimatetool.model.IUsedByRelationship;
  * 
  * @author Phillip Beauvoir
  */
-public class ZestViewerLabelProvider extends BaseLabelProvider
-implements ILabelProvider, ISelfStyleProvider {
+public class ZestViewerLabelProvider
+implements IBaseLabelProvider, ISelfStyleProvider {
     
     Color HIGHLIGHT_COLOR = new Color(Display.getDefault(), 255, 255, 255);
     Color FOCUS_COLOR = new Color(Display.getDefault(), 200, 200, 255);
@@ -68,16 +71,17 @@ implements ILabelProvider, ISelfStyleProvider {
         focusObject = object;
     }
     
-    @Override
-    public Image getImage(Object element) {
-        if(element instanceof IRelationship) {
-            return null;
-        }
-        return ArchimateLabelProvider.INSTANCE.getImage(element);
+    private Image getImage(Object element) {
+        return ArchiLabelProvider.INSTANCE.getImage(element);
     }
 
-    @Override
-    public String getText(Object element) {
+    private String getText(Object element) {
+        if(element instanceof IInfluenceRelationship) {
+            IInfluenceRelationship rel = (IInfluenceRelationship)element;
+            if(StringUtils.isSet(rel.getStrength())) {
+                return ((INameable)element).getName() + " " + rel.getStrength(); //$NON-NLS-1$
+            }
+        }
         if(element instanceof INameable) {
             return ((INameable)element).getName();
         }
@@ -86,9 +90,21 @@ implements ILabelProvider, ISelfStyleProvider {
 
     @Override
     public void dispose() {
-        super.dispose();
         HIGHLIGHT_COLOR.dispose();
         FOCUS_COLOR.dispose();
+    }
+
+    @Override
+    public void addListener(ILabelProviderListener listener) {
+    }
+
+    @Override
+    public boolean isLabelProperty(Object element, String property) {
+        return false;
+    }
+
+    @Override
+    public void removeListener(ILabelProviderListener listener) {
     }
 
     // ========================================================================================
@@ -125,13 +141,13 @@ implements ILabelProvider, ISelfStyleProvider {
     }
 
     public IFigure getTooltip(Object entity) {
-        if(entity instanceof IArchimateComponent) {
+        if(entity instanceof IArchimateConcept) {
             ToolTipFigure l = new ToolTipFigure();
-            String type = ArchimateLabelProvider.INSTANCE.getDefaultName(((EObject)entity).eClass());
-            l.setText(ArchimateLabelProvider.INSTANCE.getLabel(entity));
+            String type = ArchiLabelProvider.INSTANCE.getDefaultName(((EObject)entity).eClass());
+            l.setText(ArchiLabelProvider.INSTANCE.getLabel(entity));
             l.setType(Messages.ZestViewerLabelProvider_0 + " " + type); //$NON-NLS-1$
-            if(entity instanceof IRelationship) {
-                l.setRubric(ArchimateLabelProvider.INSTANCE.getRelationshipSentence((IRelationship)entity));
+            if(entity instanceof IArchimateRelationship) {
+                l.setRubric(ArchiLabelProvider.INSTANCE.getRelationshipSentence((IArchimateRelationship)entity));
             }
             return l;
         }
@@ -164,19 +180,15 @@ implements ILabelProvider, ISelfStyleProvider {
     
     @Override
     public void selfStyleConnection(Object element, GraphConnection connection) {
-        
-        // Connections are not rendered in some cases when curved
-        // See https://bugs.eclipse.org/bugs/show_bug.cgi?id=373199
-        // Seems to be fixed
-        
         connection.setLineWidth(0);
         connection.setTooltip(getTooltip(element));
         connection.setLineColor(ColorConstants.black);
+        connection.setText(getText(element));
         
         PolylineConnection conn = (PolylineConnection)connection.getConnectionFigure();
         
-        if(element instanceof ISpecialisationRelationship) {
-            conn.setTargetDecoration(SpecialisationConnectionFigure.createFigureTargetDecoration());
+        if(element instanceof ISpecializationRelationship) {
+            conn.setTargetDecoration(SpecializationConnectionFigure.createFigureTargetDecoration());
         }
         else if(element instanceof ICompositionRelationship) {
             conn.setSourceDecoration(CompositionConnectionFigure.createFigureSourceDecoration());
@@ -188,10 +200,10 @@ implements ILabelProvider, ISelfStyleProvider {
             conn.setSourceDecoration(AssignmentConnectionFigure.createFigureSourceDecoration());
             conn.setTargetDecoration(AssignmentConnectionFigure.createFigureTargetDecoration());
         }
-        else if(element instanceof IRealisationRelationship) {
-            conn.setTargetDecoration(RealisationConnectionFigure.createFigureTargetDecoration());
+        else if(element instanceof IRealizationRelationship) {
+            conn.setTargetDecoration(RealizationConnectionFigure.createFigureTargetDecoration());
             connection.setLineStyle(SWT.LINE_CUSTOM);
-            conn.setLineDash(new float[] { 4 });
+            conn.setLineDash(new float[] { 2 });
         }
         else if(element instanceof ITriggeringRelationship) {
             conn.setTargetDecoration(TriggeringConnectionFigure.createFigureTargetDecoration());
@@ -201,8 +213,8 @@ implements ILabelProvider, ISelfStyleProvider {
             connection.setLineStyle(SWT.LINE_CUSTOM);
             conn.setLineDash(new float[] { 6, 3 });
         }
-        else if(element instanceof IUsedByRelationship) {
-            conn.setTargetDecoration(UsedByConnectionFigure.createFigureTargetDecoration());
+        else if(element instanceof IServingRelationship) {
+            conn.setTargetDecoration(ServingConnectionFigure.createFigureTargetDecoration());
         }
         else if(element instanceof IAccessRelationship) {
             switch(((IAccessRelationship)element).getAccessType()) {
@@ -228,12 +240,20 @@ implements ILabelProvider, ISelfStyleProvider {
                     break;
             }
             connection.setLineStyle(SWT.LINE_CUSTOM);
-            conn.setLineDash(new float[] { 1.5f, 3 });
+            conn.setLineDash(new float[] { 2 });
         }
         else if(element instanceof IInfluenceRelationship) {
             conn.setTargetDecoration(InfluenceConnectionFigure.createFigureTargetDecoration());
             connection.setLineStyle(SWT.LINE_CUSTOM);
             conn.setLineDash(new float[] { 6, 3 });
+        }
+        else if(element instanceof IAssociationRelationship) {
+            if(((IAssociationRelationship)element).isDirected()) {
+                conn.setTargetDecoration(AssociationConnectionFigure.createFigureTargetDecoration());
+            }
+            else {
+                conn.setTargetDecoration(null);
+            }
         }
         
         conn.setAntialias(SWT.ON);
@@ -247,5 +267,8 @@ implements ILabelProvider, ISelfStyleProvider {
         
         node.setHighlightColor(getNodeHighlightColor(element));
         node.setTooltip(getTooltip(element));
+        
+        node.setText(getText(element));
+        node.setImage(getImage(element));
     }
 }

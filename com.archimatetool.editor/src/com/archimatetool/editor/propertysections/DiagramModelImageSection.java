@@ -8,9 +8,10 @@ package com.archimatetool.editor.propertysections;
 import java.io.File;
 import java.io.IOException;
 
-import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.common.notify.impl.AdapterImpl;
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.gef.commands.Command;
+import org.eclipse.gef.commands.CompoundCommand;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.MenuManager;
@@ -28,20 +29,20 @@ import org.eclipse.ui.PlatformUI;
 
 import com.archimatetool.editor.model.IArchiveManager;
 import com.archimatetool.editor.model.commands.EObjectFeatureCommand;
+import com.archimatetool.model.IAdapter;
+import com.archimatetool.model.IArchimateModel;
 import com.archimatetool.model.IArchimatePackage;
 import com.archimatetool.model.IDiagramModelImage;
 import com.archimatetool.model.IDiagramModelImageProvider;
-import com.archimatetool.model.IDiagramModelObject;
-import com.archimatetool.model.ILockable;
 
 
 
 /**
- * Property Section for an Diagram Model Image
+ * Property Section for a Diagram Model Image
  * 
  * @author Phillip Beauvoir
  */
-public class DiagramModelImageSection extends AbstractArchimatePropertySection {
+public class DiagramModelImageSection extends AbstractDocumentationSection {
     
     protected static final String HELP_ID = "com.archimatetool.help.elementPropertySection"; //$NON-NLS-1$
 
@@ -50,39 +51,31 @@ public class DiagramModelImageSection extends AbstractArchimatePropertySection {
      */
     public static class Filter extends ObjectFilter {
         @Override
-        protected boolean isRequiredType(Object object) {
+        public boolean isRequiredType(Object object) {
             return object instanceof IDiagramModelImage;
         }
 
         @Override
-        protected Class<?> getAdaptableType() {
+        public Class<?> getAdaptableType() {
             return IDiagramModelImage.class;
         }
     }
 
-    /*
-     * Adapter to listen to changes made elsewhere (including Undo/Redo commands)
-     */
-    private Adapter eAdapter = new AdapterImpl() {
-        @Override
-        public void notifyChanged(Notification msg) {
-            Object feature = msg.getFeature();
-            if(feature == IArchimatePackage.Literals.LOCKABLE__LOCKED) {
-                refreshButtons();
-            }
-        }
-    };
-    
-    private IDiagramModelImage fDiagramModelImage;
-    
     protected Button fImageButton;
     
     @Override
     protected void createControls(Composite parent) {
         createImageButton(parent);
         
+        super.createControls(parent);
+        
         // Help
         PlatformUI.getWorkbench().getHelpSystem().setHelp(parent, HELP_ID);
+    }
+    
+    @Override
+    protected IObjectFilter getFilter() {
+        return new Filter();
     }
 
     /**
@@ -110,18 +103,15 @@ public class DiagramModelImageSection extends AbstractArchimatePropertySection {
                         chooseImage();
                     }
                 };
-                
                 menuManager.add(actionChoose);
                 
                 IAction actionClear = new Action(Messages.DiagramModelImageSection_3) {
                     @Override
                     public void run() {
-                        clearImage();
+                        doImagePathCommand(null);
                     }
                 };
-                
-                actionClear.setEnabled(((IDiagramModelImageProvider)getEObject()).getImagePath() != null);
-                
+                actionClear.setEnabled(((IDiagramModelImageProvider)getFirstSelectedObject()).getImagePath() != null);
                 menuManager.add(actionClear);
                 
                 Menu menu = menuManager.createContextMenu(fImageButton.getShell());
@@ -133,93 +123,109 @@ public class DiagramModelImageSection extends AbstractArchimatePropertySection {
     }
     
     @Override
-    protected void setElement(Object element) {
-        fDiagramModelImage = (IDiagramModelImage)new Filter().adaptObject(element);
-        if(fDiagramModelImage == null) {
-            System.err.println(getClass() + " failed to get element for " + element); //$NON-NLS-1$
-        }
+    protected void notifyChanged(Notification msg) {
+        super.notifyChanged(msg);
         
-        refreshControls();
+        if(msg.getNotifier() == getFirstSelectedObject()) {
+            Object feature = msg.getFeature();
+            if(feature == IArchimatePackage.Literals.LOCKABLE__LOCKED) {
+                refreshButtons();
+            }
+        }
     }
     
-    protected void refreshControls() {
+    @Override
+    protected void update() {
+        super.update();
         refreshButtons();
     }
     
     protected void refreshButtons() {
-        boolean enabled = getEObject() instanceof ILockable ? !((ILockable)getEObject()).isLocked() : true;
-        fImageButton.setEnabled(enabled);
-    }
-    
-    protected void clearImage() {
-        if(isAlive()) {
-            fIsExecutingCommand = true;
-            getCommandStack().execute(new EObjectFeatureCommand(Messages.DiagramModelImageSection_4,
-                    getEObject(), IArchimatePackage.Literals.DIAGRAM_MODEL_IMAGE_PROVIDER__IMAGE_PATH,
-                    null));
-            fIsExecutingCommand = false;
-        }
+        fImageButton.setEnabled(!isLocked(getFirstSelectedObject()));
     }
     
     protected void chooseImage() {
-        if(!isAlive()) {
-            return;
-        }
+        IDiagramModelImageProvider dmo = (IDiagramModelImageProvider)getFirstSelectedObject();
         
-        ImageManagerDialog dialog = new ImageManagerDialog(getPart().getSite().getShell(),
-                getEObject().getDiagramModel().getArchimateModel(),
-                ((IDiagramModelImageProvider)getEObject()).getImagePath());
-        
-        if(dialog.open() == Window.OK) {
-            setImage(dialog.getSelectedObject());
+        if(isAlive(dmo)) {
+            ImageManagerDialog dialog = new ImageManagerDialog(getPart().getSite().getShell(), dmo);
+            if(dialog.open() == Window.OK) {
+                // File
+                if(dialog.getUserSelectedFile() != null) {
+                    setImage(dialog.getUserSelectedFile());
+                }
+                // Existing image which could be in this model or a different model
+                else if(dialog.getUserSelectedImagePath() != null) {
+                    setImagePath(dialog.getUserSelectedModel(), dialog.getUserSelectedImagePath());
+                }
+            }
         }
     }
     
-    protected void setImage(Object selected) {
-        String path = null;
-        
+    /**
+     * Set image path from selected image path from selected model
+     */
+    protected void setImagePath(IArchimateModel selectedModel, String imagePath) {
+        // Different models so copy the image bytes and set the image path
+        if(selectedModel != getFirstSelectedObject().getArchimateModel()) {
+            try {
+                IArchiveManager selectedArchiveManager = (IArchiveManager)selectedModel.getAdapter(IArchiveManager.class);
+                imagePath = getArchiveManager().copyImageBytes(selectedArchiveManager, imagePath);
+                doImagePathCommand(imagePath);
+            }
+            catch(IOException ex) {
+                showError(ex);
+            }
+        }
+        // Same model so just set the image path
+        else {
+            doImagePathCommand(imagePath);
+        }
+    }
+    
+    /**
+     * Add and set Image and path from a file
+     */
+    protected void setImage(File file) {
+        if(!file.exists() || !file.canRead()) {
+            return;
+        }
+
         try {
-            // User selected a file
-            if(selected instanceof File) {
-                File file = (File)selected;
-                if(!file.exists() || !file.canRead()) {
-                    return;
-                }
-                
-                IArchiveManager archiveManager = (IArchiveManager)getEObject().getAdapter(IArchiveManager.class);
-                path = archiveManager.addImageFromFile(file);
-            }
-            // User selected a Gallery image path
-            else if(selected instanceof String) {
-                path = (String)selected;
-            }
-            // User selected nothing
-            else {
-                return;
-            }
+            String path = getArchiveManager().addImageFromFile(file);
+            doImagePathCommand(path);
         }
         catch(IOException ex) {
-            ex.printStackTrace();
-            MessageDialog.openError(getPart().getSite().getShell(),
-                    Messages.DiagramModelImageSection_5,
-                    Messages.DiagramModelImageSection_6);
-            return;
+            showError(ex);
         }
-        
-        fIsExecutingCommand = true;
-        getCommandStack().execute(new EObjectFeatureCommand(Messages.DiagramModelImageSection_7,
-                                getEObject(), IArchimatePackage.Literals.DIAGRAM_MODEL_IMAGE_PROVIDER__IMAGE_PATH,
-                                path));
-        fIsExecutingCommand = false;
     }
     
-    @Override
-    protected Adapter getECoreAdapter() {
-        return eAdapter;
-    }
+    protected void doImagePathCommand(String path) {
+        CompoundCommand result = new CompoundCommand();
 
-    @Override
-    protected IDiagramModelObject getEObject() {
-        return fDiagramModelImage;
+        for(EObject dmo : getEObjects()) {
+            if(isAlive(dmo)) {
+                Command cmd = new EObjectFeatureCommand(path == null ? Messages.DiagramModelImageSection_4 : Messages.DiagramModelImageSection_7,
+                        dmo, IArchimatePackage.Literals.DIAGRAM_MODEL_IMAGE_PROVIDER__IMAGE_PATH,
+                        path);
+                
+                if(cmd.canExecute()) {
+                    result.add(cmd);
+                }
+            }
+        }
+
+        executeCommand(result.unwrap());
+    }
+    
+    protected IArchiveManager getArchiveManager() {
+        return (IArchiveManager)((IAdapter)getFirstSelectedObject()).getAdapter(IArchiveManager.class);
+    }
+    
+    protected void showError(Throwable ex) {
+        ex.printStackTrace();
+        MessageDialog.openError(getPart().getSite().getShell(),
+                Messages.DiagramModelImageSection_5,
+                Messages.DiagramModelImageSection_6 + " " + ex.getMessage()); //$NON-NLS-1$
     }
 }

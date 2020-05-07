@@ -7,6 +7,7 @@ package com.archimatetool.canvas.templates.model;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 import org.eclipse.swt.graphics.Image;
 import org.jdom2.Attribute;
@@ -16,7 +17,7 @@ import org.jdom2.JDOMException;
 
 import com.archimatetool.canvas.CanvasEditorPlugin;
 import com.archimatetool.canvas.ICanvasImages;
-import com.archimatetool.editor.ArchimateEditorPlugin;
+import com.archimatetool.editor.ArchiPlugin;
 import com.archimatetool.editor.utils.ZipUtils;
 import com.archimatetool.jdom.JDOMUtils;
 import com.archimatetool.templates.model.ITemplate;
@@ -36,7 +37,7 @@ import com.archimatetool.templates.model.TemplateManager;
 public class CanvasTemplateManager extends TemplateManager {
     
     public static final String CANVAS_TEMPLATE_FILE_EXTENSION = ".archicanvas"; //$NON-NLS-1$
-    private File fUserTemplatesFile = new File(ArchimateEditorPlugin.INSTANCE.getUserDataFolder(), "canvasses.xml"); //$NON-NLS-1$
+    private File fUserTemplatesFile = new File(ArchiPlugin.INSTANCE.getUserDataFolder(), "canvasses.xml"); //$NON-NLS-1$
 
     @Override
     protected ITemplateGroup loadInbuiltTemplates() {
@@ -84,7 +85,7 @@ public class CanvasTemplateManager extends TemplateManager {
     
     @Override
     public Image getMainImage() {
-        return ICanvasImages.ImageFactory.getImage(ICanvasImages.ICON_CANVAS_MODEL_16);
+        return ICanvasImages.ImageFactory.getImage(ICanvasImages.ICON_CANVAS_MODEL);
     }
     
     @Override
@@ -94,7 +95,7 @@ public class CanvasTemplateManager extends TemplateManager {
         }
         
         // Ensure the template is of the right kind
-        String xmlString = ZipUtils.extractZipEntry(file, ZIP_ENTRY_MANIFEST);
+        String xmlString = ZipUtils.extractZipEntry(file, ZIP_ENTRY_MANIFEST, Charset.forName("UTF-8")); //$NON-NLS-1$
         if(xmlString == null) {
             return false;
         }

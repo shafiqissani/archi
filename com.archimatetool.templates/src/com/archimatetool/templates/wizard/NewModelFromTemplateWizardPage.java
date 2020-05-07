@@ -15,7 +15,7 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.jface.viewers.ViewerSorter;
+import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.jface.window.Window;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.nebula.widgets.gallery.DefaultGalleryItemRenderer;
@@ -28,8 +28,6 @@ import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.events.DisposeEvent;
-import org.eclipse.swt.events.DisposeListener;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseMoveListener;
@@ -45,7 +43,7 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Scale;
 import org.eclipse.ui.PlatformUI;
 
-import com.archimatetool.editor.ui.IArchimateImages;
+import com.archimatetool.editor.ui.IArchiImages;
 import com.archimatetool.editor.ui.components.ExtendedWizardDialog;
 import com.archimatetool.editor.utils.PlatformUtils;
 import com.archimatetool.editor.utils.StringUtils;
@@ -89,7 +87,7 @@ public abstract class NewModelFromTemplateWizardPage extends WizardPage {
         super(pageName);
         fTemplateManager = templateManager;
         init();
-        setImageDescriptor(IArchimateImages.ImageFactory.getImageDescriptor(IArchimateImages.ECLIPSE_IMAGE_NEW_WIZARD));
+        setImageDescriptor(IArchiImages.ImageFactory.getImageDescriptor(IArchiImages.ECLIPSE_IMAGE_NEW_WIZARD));
     }
 
     protected abstract void init();
@@ -141,7 +139,7 @@ public abstract class NewModelFromTemplateWizardPage extends WizardPage {
         // My Templates
         gd = new GridData(SWT.FILL, SWT.FILL, true, true);
         fUserTableViewer = createGroupsTableViewer(tableComposite, Messages.NewModelFromTemplateWizardPage_3, gd);
-        fUserTableViewer.setSorter(new ViewerSorter() {
+        fUserTableViewer.setComparator(new ViewerComparator() {
             @Override
             public int category(Object element) {
                 if(element == fTemplateManager.AllUserTemplatesGroup) {
@@ -220,20 +218,12 @@ public abstract class NewModelFromTemplateWizardPage extends WizardPage {
         
         // Double-clicks
         fGallery.addListener(SWT.MouseDoubleClick, new Listener() {
+            @Override
             public void handleEvent(Event event) {
                 GalleryItem item = fGallery.getItem(new Point(event.x, event.y));
                 if(item != null) {
                     ((ExtendedWizardDialog)getContainer()).finishPressed();
                 }
-            }
-        });
-        
-        // Dispose of the images in TemplateManager here not in the main dispose() method because if the help system is showing then 
-        // the TrayDialog is resized and this control is asked to relayout.
-        fGallery.addDisposeListener(new DisposeListener() {
-            @Override
-            public void widgetDisposed(DisposeEvent e) {
-                fTemplateManager.dispose();
             }
         });
         
@@ -266,6 +256,7 @@ public abstract class NewModelFromTemplateWizardPage extends WizardPage {
         tableComp.setLayoutData(gd);
         final TemplateGroupsTableViewer tableViewer = new TemplateGroupsTableViewer(tableComp, SWT.NULL);
         tableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+            @Override
             public void selectionChanged(SelectionChangedEvent event) {
                 Object o = ((IStructuredSelection)event.getSelection()).getFirstElement();
                 handleTableItemSelected(o);
@@ -389,7 +380,7 @@ public abstract class NewModelFromTemplateWizardPage extends WizardPage {
                 // Not enough thumbnails
                 if(item != null) {
                     ITemplate template = (ITemplate)item.getData();
-                    if(template.getThumbnails().length < 2) {
+                    if(template.getThumbnailCount() < 2) {
                         return;
                     }
                 }
@@ -411,12 +402,12 @@ public abstract class NewModelFromTemplateWizardPage extends WizardPage {
                     if(event.x < last_x - mouse_movement_factor) {
                         index--;
                         if(index < 0) {
-                            index = template.getThumbnails().length - 1;
+                            index = template.getThumbnailCount() - 1;
                         }
                     }
                     else if(event.x > last_x + mouse_movement_factor) {
                         index++;
-                        if(index == template.getThumbnails().length) {
+                        if(index == template.getThumbnailCount()) {
                             index = 0;
                         }
                     }
@@ -426,7 +417,7 @@ public abstract class NewModelFromTemplateWizardPage extends WizardPage {
                     
                     last_x = event.x;
 
-                    item.setImage(template.getThumbnails()[index]);
+                    item.setImage(template.getThumbnail(index));
                 }
             }
         });

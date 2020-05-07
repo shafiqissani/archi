@@ -6,8 +6,9 @@
 package com.archimatetool.csv.importer;
 
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +19,8 @@ import java.util.UUID;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.io.input.BOMInputStream;
+import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.gef.commands.Command;
@@ -30,15 +33,19 @@ import com.archimatetool.editor.model.commands.EObjectFeatureCommand;
 import com.archimatetool.editor.model.commands.NonNotifyingCompoundCommand;
 import com.archimatetool.editor.utils.FileUtils;
 import com.archimatetool.editor.utils.StringUtils;
-import com.archimatetool.model.IArchimateComponent;
+import com.archimatetool.model.IAccessRelationship;
+import com.archimatetool.model.IArchimateConcept;
 import com.archimatetool.model.IArchimateElement;
 import com.archimatetool.model.IArchimateFactory;
 import com.archimatetool.model.IArchimateModel;
 import com.archimatetool.model.IArchimatePackage;
+import com.archimatetool.model.IArchimateRelationship;
+import com.archimatetool.model.IAssociationRelationship;
 import com.archimatetool.model.IFolder;
+import com.archimatetool.model.IInfluenceRelationship;
+import com.archimatetool.model.IJunction;
 import com.archimatetool.model.IProperties;
 import com.archimatetool.model.IProperty;
-import com.archimatetool.model.IRelationship;
 import com.archimatetool.model.util.ArchimateModelUtils;
 
 
@@ -51,8 +58,8 @@ public class CSVImporter implements CSVConstants {
     
     private IArchimateModel fModel;
     
-    // ID -> IArchimateComponent: new elements and relations added
-    Map<String, IArchimateComponent> newComponents = new HashMap<String, IArchimateComponent>();
+    // ID -> IArchimateConcept: new elements and relations added
+    Map<String, IArchimateConcept> newConcepts = new HashMap<String, IArchimateConcept>();
     
     // IProperty -> IProperties object: new Property added
     Map<IProperty, IProperties> newProperties = new HashMap<IProperty, IProperties>();
@@ -60,8 +67,11 @@ public class CSVImporter implements CSVConstants {
     // IProperty -> Value: updated Property
     Map<IProperty, String> updatedProperties = new HashMap<IProperty, String>();
 
-    // IArchimateComponent -> String[] : Updated components' name and documentation
-    Map<IArchimateComponent, String[]> updatedComponents = new HashMap<IArchimateComponent, String[]>();
+    // IArchimateConcept -> Map [EAttribute, value] : Updated concepts' features
+    Map<IArchimateConcept, Map<EAttribute, Object>> updatedConcepts = new HashMap<IArchimateConcept, Map<EAttribute, Object>>();
+    
+    // IArchimateRelationship -> Source/Target IDs in two String array objects [0] and [1]
+    Map<IArchimateRelationship, String[]> relationshipSourceTargets = new HashMap<IArchimateRelationship, String[]>();
 
     // CSV Model id. This might be set as a reference for Properties. Might be null.
     private String modelID;
@@ -77,25 +87,27 @@ public class CSVImporter implements CSVConstants {
     }
     
     /**
-     * Do the actual import given the elements file
-     * @param elementsFile
+     * Do the actual import given the file
+     * @param file
      */
-    void doImport(File elementsFile) throws IOException, CSVParseException {
-        // Import Elements into model
-        importElements(elementsFile);
+    public void doImport(File file) throws IOException, CSVParseException {
+        // What file is it?
         
-        // Do we have a matching relations file?
-        File relationsFile = CSVImporter.getAccessoryFileFromElementsFile(elementsFile, RELATIONS_FILENAME);
-        if(relationsFile.exists() && relationsFile.isFile()) {
+        File elementsFile = getMatchingFile(file, ELEMENTS_FILENAME);
+        if(elementsFile != null && elementsFile.exists()) {
+            importElements(elementsFile);
+        }
+
+        File relationsFile = getMatchingFile(file, RELATIONS_FILENAME);
+        if(relationsFile != null && relationsFile.exists()) {
             importRelations(relationsFile);
         }
         
-        // Do we have a matching properties file?
-        File propertiesFile = CSVImporter.getAccessoryFileFromElementsFile(elementsFile, PROPERTIES_FILENAME);
-        if(propertiesFile.exists() && propertiesFile.isFile()) {
+        File propertiesFile = getMatchingFile(file, PROPERTIES_FILENAME);
+        if(propertiesFile != null && propertiesFile.exists()) {
             importProperties(propertiesFile);
         }
-        
+
         // Execute the Commands
         CommandStack stack = (CommandStack)fModel.getAdapter(CommandStack.class);
         stack.execute(createCommands());
@@ -125,18 +137,18 @@ public class CSVImporter implements CSVConstants {
         }
         
         // New elements/relations
-        for(final IArchimateComponent component : newComponents.values()) {
+        for(final IArchimateConcept concept : newConcepts.values()) {
             Command cmd = new Command() {
-                IFolder folder = fModel.getDefaultFolderForElement(component);
+                IFolder folder = fModel.getDefaultFolderForObject(concept);
                 
                 @Override
                 public void execute() {
-                    folder.getElements().add(component);
+                    folder.getElements().add(concept);
                 }
                 
                 @Override
                 public void undo() {
-                    folder.getElements().remove(component);
+                    folder.getElements().remove(concept);
                 }
             };
             
@@ -145,23 +157,18 @@ public class CSVImporter implements CSVConstants {
             }
         }
         
-        // Updated elements/relations' name and documentation
-        for(final Entry<IArchimateComponent, String[]> entry : updatedComponents.entrySet()) {
-            // Name
-            Command cmd = new EObjectFeatureCommand(Messages.CSVImporter_0, entry.getKey(), IArchimatePackage.Literals.NAMEABLE__NAME, entry.getValue()[0]);
-            if(cmd.canExecute()) {
-                compoundCommand.add(cmd);
-            }
-            
-            // Documentation
-            cmd = new EObjectFeatureCommand(Messages.CSVImporter_0, entry.getKey(), IArchimatePackage.Literals.DOCUMENTABLE__DOCUMENTATION, entry.getValue()[1]);
-            if(cmd.canExecute()) {
-                compoundCommand.add(cmd);
+        // Updated concepts' features
+        for(Entry<IArchimateConcept, Map<EAttribute, Object>> conceptEntry : updatedConcepts.entrySet()) {
+            for(Entry<EAttribute, Object> entry : conceptEntry.getValue().entrySet()) {
+                Command cmd = new EObjectFeatureCommand(Messages.CSVImporter_0, conceptEntry.getKey(), entry.getKey(), entry.getValue());
+                if(cmd.canExecute()) {
+                    compoundCommand.add(cmd);
+                }
             }
         }
 
         // New Properties
-        for(final Entry<IProperty, IProperties> entry : newProperties.entrySet()) {
+        for(Entry<IProperty, IProperties> entry : newProperties.entrySet()) {
             Command cmd = new Command() {
                 IProperty property = entry.getKey();
                 IProperties propertiesObject = entry.getValue();
@@ -282,19 +289,20 @@ public class CSVImporter implements CSVConstants {
         String documentation = csvRecord.get(3);
         
         // Is the element already in the model?
-        IArchimateElement element = (IArchimateElement)findArchimateComponentInModel(id, eClass);
+        IArchimateElement element = (IArchimateElement)findArchimateConceptInModel(id, eClass);
         
-        // Yes
+        // Yes it is, so update values
         if(element != null) {
-            updatedComponents.put(element, new String[] { name, documentation });
+            storeUpdatedConceptFeature(element, IArchimatePackage.Literals.NAMEABLE__NAME, name);
+            storeUpdatedConceptFeature(element, IArchimatePackage.Literals.DOCUMENTABLE__DOCUMENTATION, documentation);
         }
-        // No, create a new one
+        // No, create a new element
         else {
             element = (IArchimateElement)IArchimateFactory.eINSTANCE.create(eClass);
             element.setId(id);
             element.setName(name);
             element.setDocumentation(documentation);
-            newComponents.put(id, element);
+            newConcepts.put(id, element);
         }
     }
     
@@ -321,6 +329,26 @@ public class CSVImporter implements CSVConstants {
                 createRelationFromRecord(csvRecord);
             }
         }
+        
+        // Now connect the relations
+        for(Entry<String, IArchimateConcept> entry : newConcepts.entrySet()) {
+            if(entry.getValue() instanceof IArchimateRelationship) {
+                IArchimateRelationship relation = (IArchimateRelationship)entry.getValue();
+                
+                // Get the source and target ids from the lookup table
+                String[] sourceTargets = relationshipSourceTargets.get(relation);
+                IArchimateConcept source = findReferencedConcept(sourceTargets[0]);
+                IArchimateConcept target = findReferencedConcept(sourceTargets[1]);
+                
+                // Is it a valid relationship?
+                if(!ArchimateModelUtils.isValidRelationship(source.eClass(), target.eClass(), relation.eClass())) {
+                    throw new CSVParseException(Messages.CSVImporter_5 + relation.getId());
+                }
+                
+                // Connect
+                relation.connect(source, target);
+            }
+        }
     }
     
     private boolean isRelationsRecordCorrectSize(CSVRecord csvRecord) {
@@ -344,7 +372,7 @@ public class CSVImporter implements CSVConstants {
         // Type
         String type = csvRecord.get(1);
         EClass eClass = (EClass)IArchimatePackage.eINSTANCE.getEClassifier(type);
-        if(!isRelationshipEClass(eClass)) {
+        if(!isArchimateRelationshipEClass(eClass)) {
             throw new CSVParseException(Messages.CSVImporter_4 + id);
         }
 
@@ -352,36 +380,26 @@ public class CSVImporter implements CSVConstants {
         String documentation = csvRecord.get(3);
         
         // Is the relation already in the model?
-        IRelationship relation = (IRelationship)findArchimateComponentInModel(id, eClass);
+        IArchimateRelationship relation = (IArchimateRelationship)findArchimateConceptInModel(id, eClass);
         
-        // Yes
+        // Yes it is, so updated values
         if(relation != null) {
-            updatedComponents.put(relation, new String[] { name, documentation});
+            storeUpdatedConceptFeature(relation, IArchimatePackage.Literals.NAMEABLE__NAME, name);
+            storeUpdatedConceptFeature(relation, IArchimatePackage.Literals.DOCUMENTABLE__DOCUMENTATION, documentation);
         }
         // No, create a new one
         else {
-            relation = (IRelationship)IArchimateFactory.eINSTANCE.create(eClass);
-            
-            // Find source and target elements
-            String sourceID = csvRecord.get(4);
-            IArchimateElement source = findReferencedElement(sourceID);
-            
-            String targetID = csvRecord.get(5);
-            IArchimateElement target = findReferencedElement(targetID);
-            
-            // Is it a valid relationship?
-            if(!ArchimateModelUtils.isValidRelationship(source.eClass(), target.eClass(), eClass)) {
-                throw new CSVParseException(Messages.CSVImporter_5 + id);
-            }
-            
-            relation.setSource(source);
-            relation.setTarget(target);
-            
+            relation = (IArchimateRelationship)IArchimateFactory.eINSTANCE.create(eClass);
             relation.setId(id);
             relation.setName(name);
             relation.setDocumentation(documentation);
-
-            newComponents.put(id, relation);
+            
+            // Get source and target ids and store in lookup table
+            String sourceID = csvRecord.get(4);
+            String targetID = csvRecord.get(5);
+            relationshipSourceTargets.put(relation, new String[] { sourceID, targetID });
+            
+            newConcepts.put(id, relation);
         }
     }
 
@@ -428,8 +446,8 @@ public class CSVImporter implements CSVConstants {
             checkIDForInvalidCharacters(id);
         }
         
-        // Find referenced element in newly created list
-        IProperties propertiesObject = newComponents.get(id);
+        // Find referenced concept in newly created list
+        IProperties propertiesObject = newConcepts.get(id);
         
         // Not found, check if it's referencing an existing element in the model
         if(propertiesObject == null) {
@@ -451,6 +469,35 @@ public class CSVImporter implements CSVConstants {
         
         String key = normalise(csvRecord.get(1));
         String value = normalise(csvRecord.get(2));
+        
+        // Handle special properties for some concepts' attributes
+        if(INFLUENCE_STRENGTH.equals(key) && propertiesObject instanceof IInfluenceRelationship) {
+            storeUpdatedConceptFeature((IArchimateConcept)propertiesObject,
+                    IArchimatePackage.Literals.INFLUENCE_RELATIONSHIP__STRENGTH, value);
+            return;
+        }
+        else if(ACCESS_TYPE.equals(key) && propertiesObject instanceof IAccessRelationship) {
+            int newvalue = ACCESS_TYPES.indexOf(value);
+            storeUpdatedConceptFeature((IArchimateConcept)propertiesObject,
+                    IArchimatePackage.Literals.ACCESS_RELATIONSHIP__ACCESS_TYPE, newvalue);
+            return;
+        }
+        else if(ASSOCIATION_DIRECTED.endsWith(key) && propertiesObject instanceof IAssociationRelationship) {
+            boolean newvalue = "true".equalsIgnoreCase(value); //$NON-NLS-1$
+            storeUpdatedConceptFeature((IArchimateConcept)propertiesObject,
+                    IArchimatePackage.Literals.ASSOCIATION_RELATIONSHIP__DIRECTED, newvalue);
+            return;
+        }
+        else if(JUNCTION_TYPE.equals(key) && propertiesObject instanceof IJunction) {
+            if(JUNCTION_AND.equals(value)) {
+                value = IJunction.AND_JUNCTION_TYPE;
+            }
+            else {
+                value = IJunction.OR_JUNCTION_TYPE;
+            }
+            storeUpdatedConceptFeature((IArchimateConcept)propertiesObject, IArchimatePackage.Literals.JUNCTION__TYPE, value);
+            return;
+        }
         
         // Is there already a property with this key?
         IProperty property = getProperty(propertiesObject, key);
@@ -485,7 +532,8 @@ public class CSVImporter implements CSVConstants {
         String errorMessage = "invalid char between encapsulated token and delimiter"; //$NON-NLS-1$
         
         try {
-            parser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT);
+            InputStreamReader is = new InputStreamReader(new BOMInputStream(new FileInputStream(file)), "UTF-8"); //$NON-NLS-1$
+            parser = new CSVParser(is, CSVFormat.DEFAULT);
             records = parser.getRecords();
         }
         catch(IOException ex) {
@@ -494,7 +542,8 @@ public class CSVImporter implements CSVConstants {
             }
             if(ex.getMessage() != null && ex.getMessage().contains(errorMessage)) {
                 try {
-                    parser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT.withDelimiter(';'));
+                    InputStreamReader is = new InputStreamReader(new BOMInputStream(new FileInputStream(file)), "UTF-8"); //$NON-NLS-1$
+                    parser = new CSVParser(is, CSVFormat.DEFAULT.withDelimiter(';'));
                     records = parser.getRecords();
                 }
                 catch(IOException ex2) {
@@ -502,7 +551,8 @@ public class CSVImporter implements CSVConstants {
                         parser.close();
                     }
                     if(ex2.getMessage() != null && ex2.getMessage().contains(errorMessage)) {
-                        parser = new CSVParser(new FileReader(file), CSVFormat.DEFAULT.withDelimiter('\t'));
+                        InputStreamReader is = new InputStreamReader(new BOMInputStream(new FileInputStream(file)), "UTF-8"); //$NON-NLS-1$
+                        parser = new CSVParser(is, CSVFormat.DEFAULT.withDelimiter('\t'));
                         records = parser.getRecords();
                     }
                     else {
@@ -552,15 +602,30 @@ public class CSVImporter implements CSVConstants {
     
     /**
      * @param file
-     * @param one of RELATIONS_FILENAME or PROPERTIES_FILENAME
-     * @return A matching acessory file name given the elements file name
+     * @param target one of ELEMENTS_FILENAME, RELATIONS_FILENAME or PROPERTIES_FILENAME
+     * @return A matching acessory file name given the file name
      *         For example, given file "prefix-elements.csv" and matching on RELATIONS_FILENAME will return "prefix-relations.csv"
      */
-    static File getAccessoryFileFromElementsFile(File file, String targetFilename) {
-        String name = file.getPath();
-        int index = name.lastIndexOf(ELEMENTS_FILENAME);
-        name = new StringBuilder(name).replace(index, index + ELEMENTS_FILENAME.length(), targetFilename).toString();
-        return new File(name);
+    File getMatchingFile(File file, String target) {
+        String match = null;
+        
+        if(isElementsFileName(file)) {
+            match = ELEMENTS_FILENAME;
+        }
+        else if(isRelationsFileName(file)) {
+            match = RELATIONS_FILENAME;
+        }
+        else if(isPropertiesFileName(file)) {
+            match = PROPERTIES_FILENAME;
+        }
+        else {
+            return null;
+        }
+        
+        String path = file.getPath();
+        int index =  path.lastIndexOf(match);
+        path = new StringBuilder(path).replace(index, index + match.length(), target).toString();
+        return new File(path);
     }
 
     /**
@@ -603,31 +668,31 @@ public class CSVImporter implements CSVConstants {
     String generateID() {
         String id;
         do {
-            id = UUID.randomUUID().toString().split("-")[0]; //$NON-NLS-1$
+            id = UUID.randomUUID().toString();
         }
-        while(newComponents.containsKey(id));
+        while(newConcepts.containsKey(id));
         
         return id;
     }
     
     void checkIDForInvalidCharacters(String id) throws CSVParseException {
-        if(!id.matches("^[a-zA-Z0-9_-]+$")) { //$NON-NLS-1$
+        if(!id.matches("^[a-zA-Z0-9._-]+$")) { //$NON-NLS-1$
             throw new CSVParseException(Messages.CSVImporter_12 + id);
         }
     }
     
     /**
-     * Find an existing archimate component in the model given its id and class type. Return null if not found.
+     * Find an existing archimate concept in the model given its id and class type. Return null if not found.
      * @throws CSVParseException 
      */
-    IArchimateComponent findArchimateComponentInModel(String id, EClass eClass) throws CSVParseException {
+    IArchimateConcept findArchimateConceptInModel(String id, EClass eClass) throws CSVParseException {
         EObject eObject = ArchimateModelUtils.getObjectByID(fModel, id);
         
         // Found an element with this id
         if(eObject != null) {
             // class matches
             if(eObject.eClass() == eClass) {
-                return (IArchimateComponent)eObject;
+                return (IArchimateConcept)eObject;
             }
             // Not the right class, so that's an error we should report
             else {
@@ -640,11 +705,11 @@ public class CSVImporter implements CSVConstants {
     }
     
     /**
-     * Find a referenced element either in the model or in the newly created elements list
+     * Find a referenced concept either in the model or in the newly created elements list
      */
-    IArchimateElement findReferencedElement(String id) throws CSVParseException {
+    IArchimateConcept findReferencedConcept(String id) throws CSVParseException {
         // Do we have it as a newly created element?
-        EObject eObject = newComponents.get(id);
+        EObject eObject = newConcepts.get(id);
         
         // No. How about in the model?
         if(eObject == null) {
@@ -657,19 +722,23 @@ public class CSVImporter implements CSVConstants {
         }
         
         // Check eClass type
-        if(!isArchimateElementEClass(eObject.eClass())) {
+        if(!isArchimateConceptEClass(eObject.eClass())) {
             throw new CSVParseException(Messages.CSVImporter_11 + id);
         }
 
-        return (IArchimateElement)eObject;
+        return (IArchimateConcept)eObject;
+    }
+    
+    boolean isArchimateConceptEClass(EClass eClass) {
+        return eClass != null && IArchimatePackage.eINSTANCE.getArchimateConcept().isSuperTypeOf(eClass);
     }
     
     boolean isArchimateElementEClass(EClass eClass) {
         return eClass != null && IArchimatePackage.eINSTANCE.getArchimateElement().isSuperTypeOf(eClass);
     }
     
-    boolean isRelationshipEClass(EClass eClass) {
-        return eClass != null && IArchimatePackage.eINSTANCE.getRelationship().isSuperTypeOf(eClass);
+    boolean isArchimateRelationshipEClass(EClass eClass) {
+        return eClass != null && IArchimatePackage.eINSTANCE.getArchimateRelationship().isSuperTypeOf(eClass);
     }
     
     boolean hasProperty(IProperties propertiesObject, String key, String value) {
@@ -690,5 +759,16 @@ public class CSVImporter implements CSVConstants {
         }
         
         return null;
+    }
+    
+    void storeUpdatedConceptFeature(IArchimateConcept concept, EAttribute feature, Object value) {
+        Map<EAttribute, Object> map = updatedConcepts.get(concept);
+        
+        if(map == null) {
+            map = new HashMap<EAttribute, Object>();
+            updatedConcepts.put(concept, map);
+        }
+        
+        map.put(feature, value);
     }
 }

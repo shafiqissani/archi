@@ -13,22 +13,21 @@ import org.eclipse.emf.ecore.resource.Resource;
 
 import com.archimatetool.editor.model.compatibility.CompatibilityHandlerException;
 import com.archimatetool.editor.model.compatibility.ICompatibilityHandler;
-import com.archimatetool.editor.ui.factory.ElementUIFactory;
-import com.archimatetool.editor.ui.factory.IElementUIProvider;
+import com.archimatetool.editor.ui.factory.IGraphicalObjectUIProvider;
+import com.archimatetool.editor.ui.factory.ObjectUIFactory;
 import com.archimatetool.editor.utils.StringUtils;
 import com.archimatetool.model.IArchimateModel;
 import com.archimatetool.model.IBounds;
 import com.archimatetool.model.IDiagramModelArchimateObject;
 import com.archimatetool.model.IDiagramModelContainer;
-import com.archimatetool.model.IDiagramModelGroup;
 import com.archimatetool.model.IDiagramModelImage;
 import com.archimatetool.model.IDiagramModelObject;
-import com.archimatetool.model.IJunctionElement;
+import com.archimatetool.model.IJunction;
 
 
 
 /**
- *  In Archi versions >= 3.0.0 We no longer save default widths and heights as -1, -1
+ *  In Archi (and ModelVersion number) >= 3.0.0 we no longer save default widths and heights as -1, -1
  * 
  * @author Phillip Beauvoir
  */
@@ -38,29 +37,17 @@ public class FixDefaultSizesHandler implements ICompatibilityHandler {
     public void fixCompatibility(Resource resource) throws CompatibilityHandlerException {
         IArchimateModel model = (IArchimateModel)resource.getContents().get(0);
         
-        // Fix Group sizes first
-        fixGroupFigureOffset(model);
-        
-        // Then check all widths and heights
-        fixMissingWidthAndHeight(model);
-    }
-    
-    /**
-     * From 3.1.1 onwards we don't have an 18 pixel offset on Group figures
-     */
-    void fixGroupFigureOffset(IArchimateModel model) {
-        String version = model.getVersion();
-        if(version != null && StringUtils.compareVersionNumbers(version, "3.1.1") < 0) { //$NON-NLS-1$
-            for(Iterator<EObject> iter = model.eAllContents(); iter.hasNext();) {
-                EObject eObject = iter.next();
-                if(eObject instanceof IDiagramModelObject && eObject.eContainer() instanceof IDiagramModelGroup) {
-                    IBounds bounds = ((IDiagramModelObject)eObject).getBounds();
-                    bounds.setY(bounds.getY() + 18);
-                }
-            }
+        // Check all widths and heights
+        if(isVersion(model)) {
+            fixMissingWidthAndHeight(model);
         }
     }
     
+    boolean isVersion(IArchimateModel model) {
+        String version = model.getVersion();
+        return version != null && StringUtils.compareVersionNumbers(version, "3.0.0") < 0; //$NON-NLS-1$
+    }
+
     /**
      * Fix missing width and height values
      */
@@ -126,12 +113,12 @@ public class FixDefaultSizesHandler implements ICompatibilityHandler {
 
         // Legacy size of ArchiMate figure
         if(dmo instanceof IDiagramModelArchimateObject) {
-            if(!(((IDiagramModelArchimateObject)dmo).getArchimateElement() instanceof IJunctionElement)) {
+            if(!(((IDiagramModelArchimateObject)dmo).getArchimateElement() instanceof IJunction)) {
                 return new Dimension(120, 55);
             }
         }
         
-        IElementUIProvider provider = ElementUIFactory.INSTANCE.getProvider(dmo);
-        return provider != null ? provider.getDefaultSize() : new Dimension(120, 55);
+        IGraphicalObjectUIProvider provider = (IGraphicalObjectUIProvider)ObjectUIFactory.INSTANCE.getProvider(dmo);
+        return provider != null ? provider.getUserDefaultSize() : new Dimension(120, 55);
     }
 }

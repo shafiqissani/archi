@@ -25,7 +25,10 @@ public class ArchimateDiagramModelGraphicsIcon implements IGraphicsIcon {
     static Color blue3 = ColorFactory.get(225, 246, 255);
     static Color blue4 = ColorFactory.get(150, 210, 247);
 
+    @Override
     public void drawIcon(Graphics graphics, Point origin) {
+        graphics.pushState();
+        
         graphics.setLineWidth(1);
         
         // fills
@@ -62,6 +65,7 @@ public class ArchimateDiagramModelGraphicsIcon implements IGraphicsIcon {
         graphics.setForegroundColor(blue1);
         graphics.drawLine(origin.x, origin.y, origin.x + 2, origin.y);
         
+        graphics.popState();
     }
 
 }

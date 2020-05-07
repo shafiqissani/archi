@@ -25,6 +25,9 @@ import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.ColumnViewer;
+import org.eclipse.jface.viewers.ColumnViewerEditor;
+import org.eclipse.jface.viewers.ColumnViewerEditorActivationEvent;
+import org.eclipse.jface.viewers.ColumnViewerEditorActivationStrategy;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.EditingSupport;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -36,9 +39,10 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
+import org.eclipse.jface.viewers.TableViewerEditor;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.viewers.ViewerSorter;
+import org.eclipse.jface.viewers.ViewerComparator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.BusyIndicator;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -56,7 +60,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 
-import com.archimatetool.editor.ui.IArchimateImages;
+import com.archimatetool.editor.ui.IArchiImages;
 import com.archimatetool.editor.ui.components.ExtendedTitleAreaDialog;
 import com.archimatetool.model.IArchimateModel;
 import com.archimatetool.model.IProperties;
@@ -93,7 +97,7 @@ public class UserPropertiesManagerDialog extends ExtendedTitleAreaDialog {
 
     public UserPropertiesManagerDialog(Shell parentShell, IArchimateModel model) {
         super(parentShell, "UserPropertiesManagerDialog"); //$NON-NLS-1$
-        setTitleImage(IArchimateImages.ImageFactory.getImage(IArchimateImages.ECLIPSE_IMAGE_IMPORT_PREF_WIZARD));
+        setTitleImage(IArchiImages.ImageFactory.getImage(IArchiImages.ECLIPSE_IMAGE_IMPORT_PREF_WIZARD));
         setShellStyle(getShellStyle() | SWT.RESIZE);
 
         fArchimateModel = model;
@@ -178,6 +182,7 @@ public class UserPropertiesManagerDialog extends ExtendedTitleAreaDialog {
         menuMgr.setRemoveAllWhenShown(true);
 
         menuMgr.addMenuListener(new IMenuListener() {
+            @Override
             public void menuAboutToShow(IMenuManager manager) {
                 fillContextMenu(manager);
             }
@@ -201,10 +206,24 @@ public class UserPropertiesManagerDialog extends ExtendedTitleAreaDialog {
         fTableViewer = new TableViewer(tableComp, SWT.MULTI | SWT.FULL_SELECTION);
         fTableViewer.getControl().setLayoutData(new GridData(GridData.FILL_BOTH));
 
+        // Edit cell on double-click and add Tab key traversal
+        TableViewerEditor.create(fTableViewer, new ColumnViewerEditorActivationStrategy(fTableViewer) {
+            @Override
+            protected boolean isEditorActivationEvent(ColumnViewerEditorActivationEvent event) {
+                return super.isEditorActivationEvent(event) ||
+                      (event.eventType == ColumnViewerEditorActivationEvent.MOUSE_DOUBLE_CLICK_SELECTION);
+            }
+            
+        }, ColumnViewerEditor.TABBING_HORIZONTAL | 
+                ColumnViewerEditor.TABBING_MOVE_TO_ROW_NEIGHBOR | 
+                ColumnViewerEditor.TABBING_VERTICAL |
+                ColumnViewerEditor.KEEP_EDITOR_ON_DOUBLE_CLICK |
+                ColumnViewerEditor.KEYBOARD_ACTIVATION);
+
         fTableViewer.getTable().setHeaderVisible(true);
         fTableViewer.getTable().setLinesVisible(true);
 
-        fTableViewer.setSorter(new ViewerSorter());
+        fTableViewer.setComparator(new ViewerComparator());
 
         // Columns
         TableViewerColumn columnOldKey = new TableViewerColumn(fTableViewer, SWT.NONE, 0);
@@ -222,12 +241,15 @@ public class UserPropertiesManagerDialog extends ExtendedTitleAreaDialog {
 
         // Content Provider
         fTableViewer.setContentProvider(new IStructuredContentProvider() {
+            @Override
             public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
             }
 
+            @Override
             public void dispose() {
             }
 
+            @Override
             public Object[] getElements(Object inputElement) {
                 return fKeysTable.entrySet().toArray();
             }
@@ -326,6 +348,7 @@ public class UserPropertiesManagerDialog extends ExtendedTitleAreaDialog {
             @Override
             public void execute() {
                 BusyIndicator.showWhile(null, new Runnable() {
+                    @Override
                     public void run() {
                         doSuperExecute();
                     }
@@ -335,6 +358,7 @@ public class UserPropertiesManagerDialog extends ExtendedTitleAreaDialog {
             @Override
             public void undo() {
                 BusyIndicator.showWhile(null, new Runnable() {
+                    @Override
                     public void run() {
                         doSuperUndo();
                     }
@@ -344,6 +368,7 @@ public class UserPropertiesManagerDialog extends ExtendedTitleAreaDialog {
             @Override
             public void redo() {
                 BusyIndicator.showWhile(null, new Runnable() {
+                    @Override
                     public void run() {
                         doSuperRedo();
                     }
@@ -425,6 +450,7 @@ public class UserPropertiesManagerDialog extends ExtendedTitleAreaDialog {
      * Label Provider
      */
     private static class LabelCellProvider extends LabelProvider implements ITableLabelProvider, ITableColorProvider {
+        @Override
         public Image getColumnImage(Object element, int columnIndex) {
             return null;
         }

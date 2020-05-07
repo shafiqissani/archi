@@ -6,20 +6,21 @@
 package com.archimatetool.editor.model.compatibility.handlers;
 
 import static org.junit.Assert.assertEquals;
-import junit.framework.JUnit4TestAdapter;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.eclipse.draw2d.geometry.Dimension;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.archimatetool.model.IArchimateDiagramModel;
 import com.archimatetool.model.IArchimateFactory;
 import com.archimatetool.model.IArchimateModel;
 import com.archimatetool.model.IDiagramModelArchimateObject;
 import com.archimatetool.model.IDiagramModelGroup;
 import com.archimatetool.model.IDiagramModelObject;
 import com.archimatetool.testingtools.ArchimateTestModel;
-import com.archimatetool.tests.TestUtils;
+
+import junit.framework.JUnit4TestAdapter;
 
 
 @SuppressWarnings("nls")
@@ -34,34 +35,27 @@ public class FixDefaultSizesHandlerTests {
     @BeforeClass
     public static void runOnceBeforeAllTests() {
         handler = new FixDefaultSizesHandler();
-        
-        TestUtils.ensureDefaultDisplay();
     }
     
     @Test
-    public void testFixGroupFigureOffset() {
-        ArchimateTestModel tm = new ArchimateTestModel();
-        IArchimateModel model = tm.createSimpleModel();
-        model.setVersion("3.1.1");
-        IArchimateDiagramModel dm = tm.addNewArchimateDiagramModel();
+    public void testIsVersion() {
+        IArchimateModel model = IArchimateFactory.eINSTANCE.createArchimateModel();
         
-        IDiagramModelGroup group = IArchimateFactory.eINSTANCE.createDiagramModelGroup();
-        group.setBounds(0, 0, 400, 300);
-        dm.getChildren().add(group);
+        String[] oldVersions = { "1.1.0", "2.0.0", "2.1.0", "2.3.0"};
         
-        IDiagramModelObject note = IArchimateFactory.eINSTANCE.createDiagramModelNote();
-        note.setBounds(10, 10, 100, 100);
-        group.getChildren().add(note);
-        assertEquals(10, note.getBounds().getY());
+        for(String version : oldVersions) {
+            model.setVersion(version);
+            assertTrue(handler.isVersion(model));
+        }
         
-        handler.fixGroupFigureOffset(model);
-        assertEquals(10, note.getBounds().getY());
+        String[] newVersions = { "3.0.0", "3.1.0", "3.1.1", "4.0.0", "4.0.1", "4.1.0", "4.1.1", "4.2.0", "5.0.0"};
         
-        model.setVersion("3.0.0");
-        handler.fixGroupFigureOffset(model);
-        assertEquals(28, note.getBounds().getY());
+        for(String version : newVersions) {
+            model.setVersion(version);
+            assertFalse(handler.isVersion(model));
+        }
     }
-    
+
     @Test
     public void testGetNewSize_Group() {
         IDiagramModelGroup group = IArchimateFactory.eINSTANCE.createDiagramModelGroup();

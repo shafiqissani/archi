@@ -10,8 +10,7 @@ import java.util.List;
 
 import org.eclipse.osgi.util.NLS;
 
-import com.archimatetool.editor.ui.ArchimateLabelProvider;
-import com.archimatetool.hammer.validation.Validator;
+import com.archimatetool.editor.ui.ArchiLabelProvider;
 import com.archimatetool.hammer.validation.issues.AdviceType;
 import com.archimatetool.hammer.validation.issues.IIssue;
 import com.archimatetool.model.IArchimateDiagramModel;
@@ -22,17 +21,20 @@ import com.archimatetool.model.IArchimateDiagramModel;
  * 
  * @author Phillip Beauvoir
  */
-public class EmptyViewsChecker extends AbstractChecker {
+public class EmptyViewsChecker implements IChecker {
     
     final String fName = Messages.EmptyViewsChecker_0;
     final String fDescription = Messages.EmptyViewsChecker_1;
     final String fExplanation = Messages.EmptyViewsChecker_2 +
                                Messages.EmptyViewsChecker_3;
     
-    public EmptyViewsChecker(Validator validator) {
-        super(validator);
+    private List<IArchimateDiagramModel> fViews;
+    
+    public EmptyViewsChecker(List<IArchimateDiagramModel> views) {
+        fViews = views;
     }
 
+    @Override
     public List<IIssue> getIssues() {
         return findEmptyViews();
     }
@@ -41,9 +43,9 @@ public class EmptyViewsChecker extends AbstractChecker {
     List<IIssue> findEmptyViews() {
         List<IIssue> issues = new ArrayList<IIssue>();
         
-        for(IArchimateDiagramModel view : archimateViews) {
+        for(IArchimateDiagramModel view : fViews) {
             if(view.getChildren().isEmpty()) {
-                String viewName = ArchimateLabelProvider.INSTANCE.getLabel(view);
+                String viewName = ArchiLabelProvider.INSTANCE.getLabel(view);
                 String description = NLS.bind(fDescription, viewName);
                 String explanation = NLS.bind(fExplanation, viewName);
                 

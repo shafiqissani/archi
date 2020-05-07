@@ -23,6 +23,7 @@ import com.archimatetool.model.IArchimateModel;
 import com.archimatetool.model.IDiagramModel;
 import com.archimatetool.model.IDiagramModelReference;
 import com.archimatetool.model.IFolder;
+import com.archimatetool.model.ITextPosition;
 
 
 
@@ -35,6 +36,7 @@ public class CreateMapViewCheatSheetAction
 extends Action
 implements ICheatSheetAction {
     
+    @Override
     public void run(String[] params, ICheatSheetManager manager) {
         IViewPart viewPart = ViewManager.showViewPart(ITreeModelView.ID, true);
         if(viewPart == null) {
@@ -43,7 +45,7 @@ implements ICheatSheetAction {
             return;
         }
         
-        IArchimateModel model = (IArchimateModel)viewPart.getAdapter(IArchimateModel.class);
+        IArchimateModel model = viewPart.getAdapter(IArchimateModel.class);
         if(model == null) {
             MessageDialog.openWarning(Display.getCurrent().getActiveShell(), Messages.CreateMapViewCheatSheetAction_2,
                     Messages.CreateMapViewCheatSheetAction_3);
@@ -97,7 +99,7 @@ implements ICheatSheetAction {
             diagramModel.setName(Messages.CreateMapViewCheatSheetAction_6);
             
             // Add diagram model *first* to get id!
-            parentFolder = model.getDefaultFolderForElement(diagramModel);
+            parentFolder = model.getDefaultFolderForObject(diagramModel);
             parentFolder.getElements().add(0, diagramModel);
             
             // Add diagram model references
@@ -114,6 +116,8 @@ implements ICheatSheetAction {
                 ref.setBounds(20, y, 400, 100);
                 diagramModel.getChildren().add(ref);
                 y += 120;
+                
+                ref.setTextPosition(ITextPosition.TEXT_POSITION_TOP);
             }
         }
     }

@@ -7,10 +7,10 @@ package com.archimatetool.editor.diagram.commands;
 
 import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.gef.commands.Command;
+import org.eclipse.gef.commands.CompoundCommand;
 import org.eclipse.gef.requests.CreateConnectionRequest;
 
-import com.archimatetool.editor.preferences.IPreferenceConstants;
-import com.archimatetool.editor.preferences.Preferences;
+import com.archimatetool.model.IConnectable;
 import com.archimatetool.model.IDiagramModelConnection;
 import com.archimatetool.model.IDiagramModelObject;
 
@@ -26,8 +26,8 @@ extends Command {
     protected CreateConnectionRequest fRequest;
     
     protected IDiagramModelConnection fConnection;
-    protected IDiagramModelObject fSource;
-    protected IDiagramModelObject fTarget;
+    protected IConnectable fSource;
+    protected IConnectable fTarget;
 
     /**
      * Instantiate a command that can create a connection between two shapes.
@@ -43,7 +43,7 @@ extends Command {
      * @param source that source endpoint
      * @throws IllegalArgumentException if source is null
      */
-    public void setSource(IDiagramModelObject source) {
+    public void setSource(IConnectable source) {
         if(source == null) {
             throw new IllegalArgumentException("Source connected model object cannot be null"); //$NON-NLS-1$
         }
@@ -55,7 +55,7 @@ extends Command {
      * @param target that target endpoint
      * @throws IllegalArgumentException if target is null
      */
-    public void setTarget(IDiagramModelObject target) {
+    public void setTarget(IConnectable target) {
         if(target == null) {
             throw new IllegalArgumentException("Target connected model object cannot be null"); //$NON-NLS-1$
         }
@@ -68,9 +68,7 @@ extends Command {
             return false;
         }
         
-        // Disallow same node connections if not enabled in Preferences
-        boolean allowCircularConnection = Preferences.STORE.getBoolean(IPreferenceConstants.ALLOW_CIRCULAR_CONNECTIONS);
-        return allowCircularConnection ? true : fSource != fTarget;
+        return true;
     }
 
     @Override
@@ -85,7 +83,8 @@ extends Command {
         
         // If it's a circular connection, add some bendpoints
         if(fConnection.getSource() == fConnection.getTarget()) {
-            createBendPoints();
+            Command cmd = createBendPointsForCircularConnectionCommand(fConnection);
+            cmd.execute();
         }
     }
 
@@ -108,14 +107,23 @@ extends Command {
     }
     
     /**
-     * Adding a circular connection requires some bendpoints
+     * Create a Command for adding bendpoints to a circular connection
+     * So it looks good
      */
-    protected void createBendPoints() {
-        int width = fConnection.getSource().getBounds().getWidth();
+    public static Command createBendPointsForCircularConnectionCommand(IDiagramModelConnection connection) {
+        // Only works for IDiagramModelObject as source and target objects not for connections
+        if(!(connection.getSource() instanceof IDiagramModelObject) && !(connection.getTarget() instanceof IDiagramModelObject)) {
+            return null;
+        }
+        
+        IDiagramModelObject source = (IDiagramModelObject)connection.getSource();
+        IDiagramModelObject target = (IDiagramModelObject)connection.getTarget();
+        
+        int width = source.getBounds().getWidth();
         if(width == -1) {
             width = 100;
         }
-        int height = fConnection.getSource().getBounds().getHeight();
+        int height = target.getBounds().getHeight();
         if(height == -1) {
             height = 60;
         }
@@ -123,17 +131,24 @@ extends Command {
         width = (int)Math.max(100, width * 0.6);
         height = (int)Math.max(60, height * 0.6);
         
+        CompoundCommand result = new CompoundCommand();
+        
         CreateBendpointCommand cmd = new CreateBendpointCommand();
-        cmd.setDiagramModelConnection(fConnection);
-        
+        cmd.setDiagramModelConnection(connection);
         cmd.setRelativeDimensions(new Dimension(width, 0), new Dimension(width, 0));
-        cmd.execute();
+        result.add(cmd);
         
+        cmd = new CreateBendpointCommand();
+        cmd.setDiagramModelConnection(connection);
         cmd.setRelativeDimensions(new Dimension(width, height), new Dimension(width, height));
-        cmd.execute();
+        result.add(cmd);
         
+        cmd = new CreateBendpointCommand();
+        cmd.setDiagramModelConnection(connection);
         cmd.setRelativeDimensions(new Dimension(0, height), new Dimension(0, height));
-        cmd.execute();
+        result.add(cmd);
+        
+        return result;
     }
     
     @Override

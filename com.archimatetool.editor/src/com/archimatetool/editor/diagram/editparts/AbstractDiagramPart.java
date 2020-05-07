@@ -9,7 +9,6 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.draw2d.Animation;
 import org.eclipse.draw2d.AutomaticRouter;
 import org.eclipse.draw2d.BendpointConnectionRouter;
 import org.eclipse.draw2d.ConnectionLayer;
@@ -19,21 +18,19 @@ import org.eclipse.draw2d.FreeformLayout;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.ManhattanConnectionRouter;
 import org.eclipse.draw2d.MarginBorder;
-import org.eclipse.draw2d.ShortestPathConnectionRouter;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.common.notify.impl.AdapterImpl;
 import org.eclipse.gef.LayerConstants;
 import org.eclipse.gef.SnapToHelper;
-import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.swt.SWT;
 
-import com.archimatetool.editor.diagram.util.AnimationUtil;
 import com.archimatetool.editor.preferences.IPreferenceConstants;
 import com.archimatetool.editor.preferences.Preferences;
 import com.archimatetool.model.IArchimatePackage;
 import com.archimatetool.model.IDiagramModel;
+import com.archimatetool.model.IFeature;
+import com.archimatetool.model.util.LightweightEContentAdapter;
 
 
 
@@ -51,28 +48,21 @@ implements IEditPartFilterProvider {
      */
     private List<IEditPartFilter> fEditPartFilters;
     
-    private Adapter adapter = new AdapterImpl() {
-        @Override
-        public void notifyChanged(Notification msg) {
-            eCoreChanged(msg);
-        }
-    };
-    
-    /**
-     * Application Preferences Listener
-     */
-    private IPropertyChangeListener prefsListener = new IPropertyChangeListener() {
-        @Override
-        public void propertyChange(PropertyChangeEvent event) {
-            applicationPreferencesChanged(event);
-        }
-    };
+    private Adapter adapter = new LightweightEContentAdapter(this::eCoreChanged, IFeature.class);
     
     /**
      * Message from the ECore Adapter
      * @param msg
      */
     protected void eCoreChanged(Notification msg) {
+        Object feature = msg.getFeature();
+        
+        // Archi Features
+        if(feature == IArchimatePackage.Literals.FEATURES__FEATURES || msg.getNotifier() instanceof IFeature) {
+            refreshVisuals();
+            return;
+        }
+
         switch(msg.getEventType()) {
             // Children added or removed
             case Notification.ADD:
@@ -85,7 +75,6 @@ implements IEditPartFilterProvider {
                 break;
                 
             case Notification.SET:
-                Object feature = msg.getFeature();
                 // Connection Router Type
                 if(feature == IArchimatePackage.Literals.DIAGRAM_MODEL__CONNECTION_ROUTER_TYPE) {
                     refreshVisuals();
@@ -101,9 +90,15 @@ implements IEditPartFilterProvider {
         }
     }
     
+    @Override
+    protected Adapter getECoreAdapter() {
+        return adapter;
+    }
+    
     /**
      * Application User Preferences were changed
      */
+    @Override
     protected void applicationPreferencesChanged(PropertyChangeEvent event) {
         if(event.getProperty() == IPreferenceConstants.ANTI_ALIAS) {
             setAntiAlias();
@@ -128,33 +123,12 @@ implements IEditPartFilterProvider {
     }
 
     @Override
-    public void activate() {
-        if(isActive()) {
-            return;
-        }
-        
-        super.activate();
-        
-        // Listen to Model
-        getModel().eAdapters().add(adapter);
-        
-        // Listen to Prefs changes
-        Preferences.STORE.addPropertyChangeListener(prefsListener);
-    }
-
-    @Override
     public void deactivate() {
         if(!isActive()) {
             return;
         }
         
         super.deactivate();
-        
-        // Remove Model listener
-        getModel().eAdapters().remove(adapter);
-        
-        // Remove Prefs listener
-        Preferences.STORE.removePropertyChangeListener(prefsListener);
         
         // Clear Filters
         if(fEditPartFilters != null) {
@@ -179,9 +153,6 @@ implements IEditPartFilterProvider {
         
         figure.setLayoutManager(new FreeformLayout());
         
-        // Have to add this if we want Animation to work on figures!
-        AnimationUtil.addFigureForAnimation(figure);
-        
         // Anti-aliasing
         setAntiAlias();
 
@@ -192,34 +163,26 @@ implements IEditPartFilterProvider {
     public void refreshVisuals() {
         // Set Connection Router type for the whole diagram
         
-        // For animation to work on connections also set addRoutingListener(RoutingAnimator.getDefault());
-        // on the connection figures - see AbstractConnectionFigure
-        if(AnimationUtil.doAnimate()) {
-            Animation.markBegin();
-        }
-        
         ConnectionLayer cLayer = (ConnectionLayer) getLayer(LayerConstants.CONNECTION_LAYER);
         
         switch(getModel().getConnectionRouterType()) {
-            case IDiagramModel.CONNECTION_ROUTER_BENDPOINT:
-                AutomaticRouter router = new FanRouter();
-                router.setNextRouter(new BendpointConnectionRouter());
-                cLayer.setConnectionRouter(router);
-                break;
-                
-            case IDiagramModel.CONNECTION_ROUTER_SHORTEST_PATH:
-                router = new FanRouter();
-                router.setNextRouter(new ShortestPathConnectionRouter(getFigure()));
-                cLayer.setConnectionRouter(router);
-                break;
+// Doesn't work with Connection to Connection
+//            case IDiagramModel.CONNECTION_ROUTER_SHORTEST_PATH:
+//                router = new FanRouter();
+//                router.setNextRouter(new ShortestPathConnectionRouter(getFigure()));
+//                cLayer.setConnectionRouter(router);
+//                break;
                 
             case IDiagramModel.CONNECTION_ROUTER_MANHATTAN:
                 cLayer.setConnectionRouter(new ManhattanConnectionRouter());
                 break;
-        }
-        
-        if(AnimationUtil.doAnimate()) {
-            Animation.run(AnimationUtil.animationSpeed());
+            
+            case IDiagramModel.CONNECTION_ROUTER_BENDPOINT:
+            default:
+                AutomaticRouter router = new FanRouter();
+                router.setNextRouter(new BendpointConnectionRouter());
+                cLayer.setConnectionRouter(router);
+                break;
         }
     }
     

@@ -13,8 +13,6 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.IOException;
 
-import junit.framework.JUnit4TestAdapter;
-
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.Resource.Diagnostic;
 import org.junit.Test;
@@ -22,6 +20,8 @@ import org.junit.Test;
 import com.archimatetool.editor.TestSupport;
 import com.archimatetool.model.IArchimateModel;
 import com.archimatetool.model.util.ArchimateResourceFactory;
+
+import junit.framework.JUnit4TestAdapter;
 
 
 @SuppressWarnings("nls")

@@ -35,12 +35,6 @@ public abstract class DiagramModelObjectTests extends DiagramModelComponentTests
 
     @Test
     public void testGetID() {
-        assertNull(component.getId());
-        
-        IArchimateModel model = IArchimateFactory.eINSTANCE.createArchimateModel();
-        model.getDefaultFolderForElement(dm).getElements().add(dm);
-        dm.getChildren().add(object);
-        
         assertNotNull(component.getId());
     }
     
@@ -51,7 +45,18 @@ public abstract class DiagramModelObjectTests extends DiagramModelComponentTests
         dm.getChildren().add(object);
         assertSame(dm, object.getDiagramModel());
     }
+
+    @Test
+    public void testGetArchimateModel() {
+        assertNull(object.getArchimateModel());
         
+        IArchimateModel model = IArchimateFactory.eINSTANCE.createArchimateModel();
+        model.getDefaultFolderForObject(dm).getElements().add(dm);
+        dm.getChildren().add(object);
+        
+        assertSame(model, object.getArchimateModel());
+    }
+
     @Test
     public void testGetBounds() {
         assertNull(object.getBounds());
@@ -100,10 +105,35 @@ public abstract class DiagramModelObjectTests extends DiagramModelComponentTests
     }
     
     @Test
-    public void testGetTextAlignment() {
-        assertEquals(object.getDefaultTextAlignment(), object.getTextAlignment());
-        object.setTextAlignment(2);
-        assertEquals(2, object.getTextAlignment());
+    public void testGetAlpha() {
+        assertEquals(255, object.getAlpha());
+        object.setAlpha(100);
+        assertEquals(100, object.getAlpha());
+    }
+    
+    @Test
+    public void testGetLineAlpha() {
+        assertEquals(255, object.getLineAlpha());
+        object.setLineAlpha(100);
+        assertEquals(100, object.getLineAlpha());
+    }
+    
+    @Test
+    public void testGradient() {
+        assertEquals(IDiagramModelObject.GRADIENT_NONE, object.getGradient());
+        object.setGradient(2);
+        assertEquals(2, object.getGradient());
+    }
+    
+    @Test
+    public void testGetDefaultTextAlignment() {
+        assertEquals(ITextAlignment.TEXT_ALIGNMENT_CENTER, object.getTextAlignment());
+    }
+    
+    @Test
+    public void testSetTextAlignment() {
+        object.setTextAlignment(ITextAlignment.TEXT_ALIGNMENT_RIGHT);
+        assertEquals(ITextAlignment.TEXT_ALIGNMENT_RIGHT, object.getTextAlignment());
     }
     
     @Test
@@ -169,11 +199,6 @@ public abstract class DiagramModelObjectTests extends DiagramModelComponentTests
         assertTrue(object.getTargetConnections().isEmpty());
     }
 
-    @Test
-    public void testGetDefaultTextAlignment() {
-        assertEquals(ITextAlignment.TEXT_ALIGNMENT_CENTER, object.getDefaultTextAlignment());
-    }
-    
     @Override
     @Test
     public void testGetCopy() {

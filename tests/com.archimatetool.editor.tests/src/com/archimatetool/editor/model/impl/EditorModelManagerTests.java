@@ -13,9 +13,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
-import junit.framework.JUnit4TestAdapter;
-
-import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.commands.CommandStack;
 import org.junit.Before;
@@ -33,6 +30,8 @@ import com.archimatetool.model.IArchimateModel;
 import com.archimatetool.model.IArchimatePackage;
 import com.archimatetool.tests.TestData;
 import com.archimatetool.tests.TestUtils;
+
+import junit.framework.JUnit4TestAdapter;
 
 
 
@@ -76,9 +75,6 @@ public class EditorModelManagerTests {
 
         // Has an Archive Manager
         assertTrue(model.getAdapter(IArchiveManager.class) instanceof IArchiveManager);
-        
-        // Has an ECore Adapter
-        assertTrue(hasECoreAdapter(model));
     }
     
     @Test
@@ -121,9 +117,6 @@ public class EditorModelManagerTests {
         // Has an Archive Manager
         assertTrue(model.getAdapter(IArchiveManager.class) instanceof IArchiveManager);
         
-        // Has an ECore Adapter
-        assertTrue(hasECoreAdapter(model));
-        
         // Is registered
         assertEquals(1, editorModelManager.getModels().size());
         assertTrue(editorModelManager.getModels().contains(model));
@@ -154,9 +147,6 @@ public class EditorModelManagerTests {
 
         // Has an Archive Manager
         assertTrue(model.getAdapter(IArchiveManager.class) instanceof IArchiveManager);
-        
-        // Has an ECore Adapter
-        assertTrue(hasECoreAdapter(model));
         
         // Is registered
         assertEquals(1, editorModelManager.getModels().size());
@@ -220,21 +210,5 @@ public class EditorModelManagerTests {
         
         boolean result = editorModelManager.saveModel(model);
         assertTrue(result);
-    }
-    
-    // ---------------------------------------------------------------------------------------------
-    
-    /**
-     * Determine if model has an ECoreAdapter added
-     */
-    private boolean hasECoreAdapter(IArchimateModel model) {
-        Class<?> clazz = TestUtils.getMemberClass(EditorModelManager.class, "com.archimatetool.editor.model.impl.EditorModelManager$ECoreAdapter");
-        for(Adapter a : model.eAdapters()) {
-            if(clazz.isInstance(a)) {
-                return true;
-            }
-        }
-        
-        return false;
     }
 }

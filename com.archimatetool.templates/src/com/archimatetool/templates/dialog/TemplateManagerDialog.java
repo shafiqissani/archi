@@ -40,7 +40,7 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.PlatformUI;
 
-import com.archimatetool.editor.ui.IArchimateImages;
+import com.archimatetool.editor.ui.IArchiImages;
 import com.archimatetool.editor.ui.UIUtils;
 import com.archimatetool.editor.ui.components.ExtendedTitleAreaDialog;
 import com.archimatetool.editor.utils.StringUtils;
@@ -86,7 +86,7 @@ public class TemplateManagerDialog extends ExtendedTitleAreaDialog {
     
     public TemplateManagerDialog(Shell parentShell, TemplateManager templateManager) {
         super(parentShell, "TemplateManagerDialog"); //$NON-NLS-1$
-        setTitleImage(IArchimateImages.ImageFactory.getImage(IArchimateImages.ECLIPSE_IMAGE_NEW_WIZARD));
+        setTitleImage(IArchiImages.ImageFactory.getImage(IArchiImages.ECLIPSE_IMAGE_NEW_WIZARD));
         setShellStyle(getShellStyle() | SWT.RESIZE);
         
         fTemplateManager = templateManager;
@@ -153,7 +153,7 @@ public class TemplateManagerDialog extends ExtendedTitleAreaDialog {
         
         label = new CLabel(treeComp, SWT.NULL);
         label.setText(Messages.TemplateManagerDialog_5);
-        //label.setImage(IArchimateImages.ImageFactory.getImage(ImageFactory.ECLIPSE_IMAGE_FOLDER));
+        //label.setImage(IArchiImages.ImageFactory.getImage(ImageFactory.ECLIPSE_IMAGE_FOLDER));
         
         fTreeViewer = new TemplatesTreeViewer(treeComp, SWT.MULTI);
         fTreeViewer.getControl().setLayoutData(new GridData(GridData.FILL_BOTH));
@@ -222,13 +222,12 @@ public class TemplateManagerDialog extends ExtendedTitleAreaDialog {
         fNameLabel.setText(Messages.TemplateManagerDialog_9);
         fNameLabel.setEnabled(false);
         
-        fNameTextField = new Text(fieldContainer, SWT.BORDER | SWT.SINGLE);
+        fNameTextField = UIUtils.createSingleTextControl(fieldContainer, SWT.BORDER, false);
         fNameTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         fNameTextField.setEnabled(false);
-        // Single text control so strip CRLFs
-        UIUtils.conformSingleTextControl(fNameTextField);
 
         fNameTextField.addModifyListener(new ModifyListener() {
+            @Override
             public void modifyText(ModifyEvent e) {
                 String text = fNameTextField.getText();
                 if(fIsSettingFields || !StringUtils.isSet(text)) {
@@ -262,6 +261,7 @@ public class TemplateManagerDialog extends ExtendedTitleAreaDialog {
         gd.heightHint = 100;
         fDescriptionTextField.setLayoutData(gd);
         fDescriptionTextField.addModifyListener(new ModifyListener() {
+            @Override
             public void modifyText(ModifyEvent e) {
                 String text = fDescriptionTextField.getText();
                 if(fIsSettingFields || !StringUtils.isSet(text)) {
